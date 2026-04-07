@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  first_name   String
+  army_name    String
+  graduation   String
+
+  designationId String
+  designation   Designation @relation(fields: [designationId], references: [id])
+
+  role         UserRole @default(USER)
+
+  email        String   @unique
+  password     String
+  om           String   @default("BCMS")
+  createdAt    DateTime @default(now())
+}
+
+model Designation {
+  id        String   @id @default(uuid())
+  position  String
+  createdAt DateTime @default(now())
+
+  users     User[]
+}
+
+model AtaItem {
+  id                String   @id @default(uuid())
+
+  pregao            String
+  objeto            String 
+
+  ugg               String
+  nrAta             String
+  nrItem            String
+
+  descricao         String
+  fornecedor        String
+
+  inicioVigAta      DateTime
+  fimVigAta         DateTime
+
+  valorUnitario     Float
+
+  uasg              String
+  tipoUasg          String
+
+  qtdHomologada     Int
+  qtdAutorizada     Int
+  qtdSaldo          Int
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([pregao, nrAta, nrItem])
+
+}
