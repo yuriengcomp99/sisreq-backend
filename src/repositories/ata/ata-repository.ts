@@ -140,4 +140,36 @@ export class AtaRepository {
     }
   }
 
+  async searchItensByPregaoEUgg(
+    pregao: string,
+    ugg: string,
+    search?: string
+  ) {
+    return prisma.ataItem.findMany({
+      where: {
+        pregao,
+        ugg,
+        ...(search && {
+          descricao: {
+            contains: search,
+            mode: "insensitive",
+          },
+        }),
+      },
+      select: {
+        nrItem: true,
+        descricao: true,
+        valorUnitario: true,
+        qtdSaldo: true,
+        qtdHomologada: true,
+        qtdAutorizada: true,
+        fornecedor: true,
+        nrAta: true,
+      },
+      orderBy: {
+        descricao: "asc",
+      },
+    })
+  }
+
 }
