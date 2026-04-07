@@ -4,6 +4,7 @@ import cors from "cors"
 import authRoutes from "./routes/auth-routes.js"
 import userRoutes  from "./routes/user-routes.js"
 import { ataRoutes }  from "./routes/ata-routes.js"
+import ReqRouter from "./routes/requisicao-routes.js"
 import swaggerUi from "swagger-ui-express"
 import { swaggerSpec } from "./docs/swagger.js"
 
@@ -21,6 +22,8 @@ app.use("/auth", authRoutes)
 app.use("/users", userRoutes)
 
 app.use("/ata", ataRoutes)
+
+app.use("/requisicao", ReqRouter)
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
