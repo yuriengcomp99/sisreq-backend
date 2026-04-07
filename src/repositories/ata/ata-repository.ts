@@ -34,18 +34,6 @@ export class AtaRepository {
     })
   }
 
-  async getPregoes() {
-    return prisma.ataItem.findMany({
-      distinct: ["pregao"],
-      select: {
-        pregao: true,
-      },
-      orderBy: {
-        pregao: "desc",
-      },
-    })
-  }
-
   async getPregoesDetalhado() {
 
     const pregoes = await prisma.ataItem.findMany({
@@ -88,4 +76,68 @@ export class AtaRepository {
 
     return result
   }
+
+  async getPregaoByNumeroEUgg(pregao: string, ugg: string) {
+    const data = await prisma.ataItem.findMany({
+      where: {
+        pregao,
+        ugg,
+      },
+      orderBy: {
+        fornecedor: "asc",
+      },
+    })
+
+    if (data.length === 0) return null
+
+    const base = {
+      pregao: data[0].pregao,
+      ugg: data[0].ugg,
+      objeto: data[0].objeto,
+      inicioVigAta: data[0].inicioVigAta,
+      fimVigAta: data[0].fimVigAta,
+    }
+
+    const fornecedoresMap = new Map()
+
+    for (const item of data) {
+      if (!fornecedoresMap.has(item.fornecedor)) {
+        fornecedoresMap.set(item.fornecedor, {
+          fornecedor: item.fornecedor,
+          atas: new Map(),
+        })
+      }
+
+      const fornecedor = fornecedoresMap.get(item.fornecedor)
+
+      if (!fornecedor.atas.has(item.nrAta)) {
+        fornecedor.atas.set(item.nrAta, {
+          nrAta: item.nrAta,
+          itens: [],
+        })
+      }
+
+      const ata = fornecedor.atas.get(item.nrAta)
+
+      ata.itens.push({
+        nrItem: item.nrItem,
+        descricao: item.descricao,
+        valorUnitario: item.valorUnitario,
+        qtdSaldo: item.qtdSaldo,
+        qtdHomologada: item.qtdHomologada,
+        qtdAutorizada: item.qtdAutorizada,
+      })
+    }
+
+    const fornecedores = Array.from(fornecedoresMap.values()).map(f => ({
+      fornecedor: f.fornecedor,
+      atas: Array.from(f.atas.values()),
+    }))
+
+    return {
+      ...base,
+      fornecedores,
+    }
+  }
+
 }
