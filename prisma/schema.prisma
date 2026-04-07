@@ -71,6 +71,6 @@ model AtaItem {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  @@unique([pregao, nrAta, nrItem])
+  @@unique([pregao, ugg, nrAta, nrItem])
 
 }
