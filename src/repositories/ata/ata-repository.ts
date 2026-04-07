@@ -49,12 +49,12 @@ export class AtaRepository {
   async getPregoesDetalhado() {
 
     const pregoes = await prisma.ataItem.findMany({
-      distinct: ["pregao"],
+      distinct: ["pregao", "ugg"],
       select: {
         pregao: true,
         objeto: true,
-        ugg: true,          
-        tipoUasg: true,  
+        ugg: true,
+        tipoUasg: true,
         inicioVigAta: true,
         fimVigAta: true,
       },
@@ -63,9 +63,8 @@ export class AtaRepository {
       },
     })
 
-
     const counts = await prisma.ataItem.groupBy({
-      by: ["pregao"],
+      by: ["pregao", "ugg"],
       _count: {
         _all: true,
       },
@@ -77,7 +76,9 @@ export class AtaRepository {
     })
 
     const result = pregoes.map((p) => {
-      const count = counts.find(c => c.pregao === p.pregao)
+      const count = counts.find(c => 
+        c.pregao === p.pregao && c.ugg === p.ugg
+      )
 
       return {
         ...p,
