@@ -84,7 +84,7 @@ export class AtaRepository {
         ugg,
       },
       orderBy: {
-        fornecedor: "asc",
+        descricao: "asc",
       },
     })
 
@@ -98,45 +98,20 @@ export class AtaRepository {
       fimVigAta: data[0].fimVigAta,
     }
 
-    const fornecedoresMap = new Map()
-
-    for (const item of data) {
-      if (!fornecedoresMap.has(item.fornecedor)) {
-        fornecedoresMap.set(item.fornecedor, {
-          fornecedor: item.fornecedor,
-          atas: new Map(),
-        })
-      }
-
-      const fornecedor = fornecedoresMap.get(item.fornecedor)
-
-      if (!fornecedor.atas.has(item.nrAta)) {
-        fornecedor.atas.set(item.nrAta, {
-          nrAta: item.nrAta,
-          itens: [],
-        })
-      }
-
-      const ata = fornecedor.atas.get(item.nrAta)
-
-      ata.itens.push({
-        nrItem: item.nrItem,
-        descricao: item.descricao,
-        valorUnitario: item.valorUnitario,
-        qtdSaldo: item.qtdSaldo,
-        qtdHomologada: item.qtdHomologada,
-        qtdAutorizada: item.qtdAutorizada,
-      })
-    }
-
-    const fornecedores = Array.from(fornecedoresMap.values()).map(f => ({
-      fornecedor: f.fornecedor,
-      atas: Array.from(f.atas.values()),
+    const itens = data.map(item => ({
+      nrItem: item.nrItem,
+      descricao: item.descricao,
+      valorUnitario: item.valorUnitario,
+      qtdSaldo: item.qtdSaldo,
+      qtdHomologada: item.qtdHomologada,
+      qtdAutorizada: item.qtdAutorizada,
+      fornecedor: item.fornecedor,
+      nrAta: item.nrAta,
     }))
 
     return {
       ...base,
-      fornecedores,
+      itens,
     }
   }
 

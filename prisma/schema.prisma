@@ -18,6 +18,17 @@ enum UserRole {
   USER
 }
 
+enum EmpenhoTipo {
+  ORDINARIO
+  ESTIMATIVO
+  GLOBAL
+}
+
+enum SimNao {
+  SIM
+  NAO
+}
+
 model User {
   id           String   @id @default(uuid())
   first_name   String
@@ -73,4 +84,55 @@ model AtaItem {
 
   @@unique([pregao, ugg, nrAta, nrItem])
 
+}
+
+model Requisicao {
+  id                      String   @id @default(uuid())
+
+  numero_diex             String
+  nup                     String
+  data_req                DateTime
+
+  de                      String
+  para                    String
+  assunto                 String
+
+  tipo                    String
+
+  nr_pregao               String
+  ug                      String
+  nome_da_ug              String
+
+  descricao_necessidade   String   @db.VarChar(500)
+
+  recurso_id              Int
+
+  empenho_tipo            EmpenhoTipo
+  contrato                SimNao
+
+  classe_grupo_pca        String
+  nr_contratacao_pca      String
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  detalhes                RequisicaoDetalhe[]
+}
+
+model RequisicaoDetalhe {
+  id                String   @id @default(uuid())
+
+  requisicaoId      String
+  requisicao        Requisicao @relation(fields: [requisicaoId], references: [id])
+
+  nr_item           String
+  descricao         String
+  subitem           String
+  und               String
+
+  qtd               Int
+  valor_unitario    Float
+  valor_total       Float
+
+  createdAt         DateTime @default(now())
 }
