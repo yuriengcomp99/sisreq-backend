@@ -5,11 +5,17 @@ export class DeleteRequisicaoUseCase {
 
   async execute(id: number) {
     if (!id) {
-      throw new Error("ID é obrigatório")
+        throw new Error("ID_REQUIRED")
     }
 
-    const requisicao = await this.requisicaoRepository.deleteById(id)
+    try {
+        return await this.requisicaoRepository.deleteById(id)
+    } catch (error: any) {
+        if (error.code === "P2025") {
+        throw new Error("REQUISICAO_NOT_FOUND")
+        }
 
-    return requisicao
+        throw error
+    }
   }
 }
