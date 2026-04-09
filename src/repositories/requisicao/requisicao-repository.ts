@@ -14,4 +14,11 @@ export class RequisicaoRepository {
       }
     })
   }
+  async findAll() {
+    return prisma.requisicao.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    })
+  }
 }
