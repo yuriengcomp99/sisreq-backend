@@ -21,4 +21,11 @@ export class RequisicaoRepository {
       },
     })
   }
+  async deleteById(id: number) {
+  return prisma.requisicao.delete({
+    where: {
+      id,
+    },
+  })
+}
 }
