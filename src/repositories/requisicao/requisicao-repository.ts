@@ -22,10 +22,18 @@ export class RequisicaoRepository {
     })
   }
   async deleteById(id: string) {
-  return prisma.requisicao.delete({
-    where: {
-      id,
-    },
-  })
-}
+    return prisma.requisicao.delete({
+      where: {
+        id,
+      },
+    })
+  }
+  async updateById(id: string, data: any) {
+    return prisma.requisicao.update({
+      where: {
+        id,
+      },
+      data,
+    })
+  }
 }
