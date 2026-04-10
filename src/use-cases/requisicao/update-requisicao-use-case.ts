@@ -1,3 +1,4 @@
+import { prisma } from "../../database/prisma.js"
 import { RequisicaoRepository } from "../../repositories/requisicao/requisicao-repository.js"
 
 export class UpdateRequisicaoUseCase {
@@ -7,23 +8,76 @@ export class UpdateRequisicaoUseCase {
     if (!id) {
       throw new Error("ID_REQUIRED")
     }
-    
-    const filteredData = Object.fromEntries(
-      Object.entries(data).filter(([_, value]) => value !== undefined)
+
+    const { itens, ...requisicaoData } = data
+
+    const cleanRequisicaoData = Object.fromEntries(
+      Object.entries(requisicaoData).filter(([_, v]) => v !== undefined)
     )
 
-    if (Object.keys(filteredData).length === 0) {
-      throw new Error("NO_DATA_TO_UPDATE")
-    }
+    return prisma.$transaction(async (tx) => {
 
-    try {
-      return await this.requisicaoRepository.updateById(id, filteredData)
-    } catch (error: any) {
-      if (error.code === "P2025") {
+      const exists = await tx.requisicao.findUnique({
+        where: { id },
+      })
+
+      if (!exists) {
         throw new Error("REQUISICAO_NOT_FOUND")
       }
 
-      throw error
-    }
+      if (Object.keys(cleanRequisicaoData).length > 0) {
+        await tx.requisicao.update({
+          where: { id },
+          data: cleanRequisicaoData,
+        })
+      }
+
+      if (Array.isArray(itens)) {
+
+        const idsEnviados = itens
+          .filter((i) => i.id)
+          .map((i) => i.id)
+
+        if (idsEnviados.length > 0) {
+          await tx.requisicaoDetalhe.deleteMany({
+            where: {
+              requisicaoId: id,
+              id: { notIn: idsEnviados },
+            },
+          })
+        } else {
+          await tx.requisicaoDetalhe.deleteMany({
+            where: { requisicaoId: id },
+          })
+        }
+
+        for (const item of itens) {
+          if (item.id) {
+            const { id: itemId, ...itemData } = item
+
+            const cleanData = Object.fromEntries(
+              Object.entries(itemData).filter(([_, v]) => v !== undefined)
+            )
+
+            await tx.requisicaoDetalhe.update({
+              where: {
+                id: itemId,
+                requisicaoId: id,
+              },
+              data: cleanData,
+            })
+          } else {
+            await tx.requisicaoDetalhe.create({
+              data: {
+                ...item,
+                requisicaoId: id,
+              },
+            })
+          }
+        }
+      }
+
+      return data
+    })
   }
 }
