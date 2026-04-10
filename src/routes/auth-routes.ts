@@ -1,74 +1,70 @@
-import { makeRegisterController } from "../factories/auth/make-register.js"
-import { makeLoginController } from "../factories/auth/make-login.js"
 import { Router } from "express"
+import { authMiddleware } from "../middlewares/auth-middleware.js"
 
-const registerController = makeRegisterController()
-const loginController = makeLoginController()
+import { makeUpdateUserController } from "../factories/auth/make-update-user-controller.js"
+import { makeDeleteUserController } from "../factories/auth/make-delete-user-controller.js"
+import { makeGetUserProfileController } from "../factories/auth/make-get-user-controller.js"
+
 const router = Router()
 
+const updateUserController = makeUpdateUserController()
+const deleteUserController = makeDeleteUserController()
+const getUserProfileController = makeGetUserProfileController()
+
 /**
  * @swagger
- * /auth/register:
- *   post:
- *     summary: Register new user
+ * /auth/me:
+ *   get:
+ *     summary: Get authenticated user profile
  *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
- *             properties:
- *               name:
- *                 type: string
- *                 example: Yuri Rodrigues
- *               email:
- *                 type: string
- *                 example: yuri@email.com
- *               password:
- *                 type: string
- *                 example: 123456
- *     responses:
- *       201:
- *         description: User created successfully
- *       400:
- *         description: Email already exists
- */
-router.post("/register", (req, res) => {
-  return registerController.handle(req, res)
-})
-/**
- * @swagger
- * /auth/login:
- *   post:
- *     summary: Login user
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *             properties:
- *               email:
- *                 type: string
- *                 example: user@email.com
- *               password:
- *                 type: string
- *                 example: 123456
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Login successful
+ *         description: User profile retrieved successfully
  */
-router.post("/login", (req, res) => {
-  return loginController.handle(req, res)
+router.get("/me", authMiddleware, (req, res) => {
+  return getUserProfileController.handle(req, res)
+})
+
+/**
+ * @swagger
+ * /auth/me:
+ *   patch:
+ *     summary: Update authenticated user
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           example:
+ *             name: Yuri Rodrigues
+ *             email: yuri@email.com
+ *             password: 123456
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ */
+router.patch("/me", authMiddleware, (req, res) => {
+  return updateUserController.handle(req, res)
+})
+
+/**
+ * @swagger
+ * /auth/me:
+ *   delete:
+ *     summary: Delete authenticated user account
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       204:
+ *         description: User deleted successfully
+ */
+router.delete("/me", authMiddleware, (req, res) => {
+  return deleteUserController.handle(req, res)
 })
 
 export default router

@@ -2,13 +2,10 @@ import express from "express"
 import dotenv from "dotenv"
 import cors from "cors"
 import authRoutes from "./routes/auth-routes.js"
-import userRoutes  from "./routes/user-routes.js"
 import { ataRoutes }  from "./routes/ata-routes.js"
 import ReqRouter from "./routes/requisicao-routes.js"
 import swaggerUi from "swagger-ui-express"
 import { swaggerSpec } from "./docs/swagger.js"
-
-
 
 dotenv.config()
 
@@ -18,8 +15,6 @@ app.use(cors({ origin: "*" }))
 app.use(express.json())
 
 app.use("/auth", authRoutes)
-
-app.use("/users", userRoutes)
 
 app.use("/ata", ataRoutes)
 
