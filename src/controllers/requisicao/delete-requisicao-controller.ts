@@ -8,11 +8,13 @@ export class DeleteRequisicaoController {
     try {
         const { id } = req.params
 
-        const requisicao = await this.deleteRequisicaoUseCase.execute(Number(id))
+        const requisicao = await this.deleteRequisicaoUseCase.execute(id)
 
         return res.status(200).json(requisicao)
 
     } catch (error: any) {
+
+        console.log("ERRO REAL:", error)
 
         if (error.message === "REQUISICAO_NOT_FOUND") {
         return res.status(404).json({

@@ -3,7 +3,7 @@ import { RequisicaoRepository } from "../../repositories/requisicao/requisicao-r
 export class DeleteRequisicaoUseCase {
   constructor(private requisicaoRepository: RequisicaoRepository) {}
 
-  async execute(id: number) {
+  async execute(id: string) {
     if (!id) {
         throw new Error("ID_REQUIRED")
     }

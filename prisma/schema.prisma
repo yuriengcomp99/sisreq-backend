@@ -123,7 +123,7 @@ model RequisicaoDetalhe {
   id                String   @id @default(uuid())
 
   requisicaoId      String
-  requisicao        Requisicao @relation(fields: [requisicaoId], references: [id])
+  requisicao        Requisicao @relation(fields: [requisicaoId], references: [id], onDelete: Cascade)
 
   nr_item           String
   descricao         String
