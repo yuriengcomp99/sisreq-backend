@@ -12,21 +12,95 @@ const getPregoesController = makeGetPregoesController()
 const getPregaoController = makeGetPregaoByUggController()
 const searchItensController = makeSearchItensController()
 
+/**
+ * @swagger
+ * /pregoes/import:
+ *   post:
+ *     summary: Importa planilha de pregões - compilado de dados (ata)
+ *     tags: [Pregoes]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Arquivo importado com sucesso
+ */
 ataRoutes.post(
   "/import",
   upload.single("file"),
   (req, res) => controller.handle(req, res)
 )
 
-ataRoutes.get("/pregoes", (req, res) =>
+/**
+ * @swagger
+ * /pregoes:
+ *   get:
+ *     summary: Lista todos os pregões disponíveis que temos capaidade de empenho (Gerenciador, Participante, Adesão)
+ *     tags: [Pregoes]
+ *     responses:
+ *       200:
+ *         description: Lista de pregões
+ */
+ataRoutes.get("/", (req, res) =>
   getPregoesController.handle(req, res)
 )
 
-ataRoutes.get("/pregoes/:pregao/:ugg", (req, res) => {
+/**
+ * @swagger
+ * /pregoes/{pregao}/{ugg}:
+ *   get:
+ *     summary: Retorna detalhes de um pregão específico e items
+ *     tags: [Pregoes]
+ *     parameters:
+ *       - in: path
+ *         name: pregao
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "12/2026"
+ *       - in: path
+ *         name: ugg
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "160000"
+ *     responses:
+ *       200:
+ *         description: Dados do pregão
+ */
+ataRoutes.get("/:pregao/:ugg", (req, res) => {
   return getPregaoController.handle(req, res)
 })
 
-ataRoutes.get("/pregoes/:pregao/:ugg/itens", (req, res) => {
+/**
+ * @swagger
+ * /pregoes/{pregao}/{ugg}/itens:
+ *   get:
+ *     summary: Lista itens de um pregão
+ *     tags: [Pregoes]
+ *     parameters:
+ *       - in: path
+ *         name: pregao
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: ugg
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lista de itens do pregão
+ */
+ataRoutes.get("/:pregao/:ugg/itens", (req, res) => {
   return searchItensController.handle(req, res)
 })
 

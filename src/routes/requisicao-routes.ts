@@ -6,24 +6,123 @@ import { makeUpdateRequisicaoController } from "../factories/requisicao/make-upd
 
 const ReqRouter = Router()
 
+const createController = makeCreateRequisicaoController()
+const getController = makeGetRequisicoesController()
+const deleteController = makeDeleteRequisicaoController()
+const updateController = makeUpdateRequisicaoController()
+
+/**
+ * @swagger
+ * /requisicoes:
+ *   post:
+ *     summary: Cria uma nova requisição
+ *     tags: [Requisicoes]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             numero_diex: "123"
+ *             nup: "456"
+ *             de: "Almoxarifado"
+ *             para: "Fiscal Administrativo"
+ *             assunto: "Aquisição de materiais"
+ *             tipo: "GERENCIADORA"
+ *             ug: "160000"
+ *             nome_da_ug: "Base X"
+ *             descricao_necessidade: "Material diversos"
+ *             itens:
+ *               - nr_item: "1"
+ *                 descricao: "Caneta azul"
+ *                 subitem: "A"
+ *                 und: "UN"
+ *                 qtd: 10
+ *                 valor_unitario: 5
+ *                 valor_total: 50
+ *     responses:
+ *       201:
+ *         description: Requisição criada com sucesso
+ */
 ReqRouter.post("/", (req, res) => {
-  const controller = makeCreateRequisicaoController()
-  return controller.create(req, res)
+  return createController.create(req, res)
 })
 
-ReqRouter.get("/", async (req, res) => {
-  const controller = makeGetRequisicoesController()
-  return controller.handle(req, res)
+/**
+ * @swagger
+ * /requisicoes:
+ *   get:
+ *     summary: Lista todas as requisições
+ *     tags: [Requisicoes]
+ *     responses:
+ *       200:
+ *         description: Lista de requisições
+ */
+ReqRouter.get("/", (req, res) => {
+  return getController.handle(req, res)
 })
 
+/**
+ * @swagger
+ * /requisicoes/{id}:
+ *   delete:
+ *     summary: Remove uma requisição
+ *     tags: [Requisicoes]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "uuid-da-requisicao"
+ *     responses:
+ *       200:
+ *         description: Requisição deletada com sucesso
+ *       404:
+ *         description: Requisição não encontrada
+ */
 ReqRouter.delete("/:id", (req, res) => {
-  const controller = makeDeleteRequisicaoController()
-  return controller.handle(req, res)
+  return deleteController.handle(req, res)
 })
 
+/**
+ * @swagger
+ * /requisicoes/{id}:
+ *   patch:
+ *     summary: Atualiza uma requisição e seus itens em lote
+ *     tags: [Requisicoes]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "uuid-da-requisicao"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             assunto: "Aquisição atualizada"
+ *             descricao_necessidade: "Nova necessidade"
+ *             itens:
+ *               - id: "uuid-item-1"
+ *                 descricao: "Item atualizado"
+ *                 qtd: 20
+ *                 valor_unitario: 10
+ *               - descricao: "Novo item"
+ *                 subitem: "B"
+ *                 und: "UN"
+ *                 qtd: 5
+ *                 valor_unitario: 100
+ *                 valor_total: 500
+ *     responses:
+ *       200:
+ *         description: Requisição atualizada com sucesso
+ *       404:
+ *         description: Requisição não encontrada
+ */
 ReqRouter.patch("/:id", (req, res) => {
-  const controller = makeUpdateRequisicaoController()
-  return controller.handle(req, res)
+  return updateController.handle(req, res)
 })
 
 export default ReqRouter

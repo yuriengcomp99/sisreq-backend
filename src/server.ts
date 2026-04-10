@@ -16,7 +16,7 @@ app.use(express.json())
 
 app.use("/auth", authRoutes)
 
-app.use("/ata", ataRoutes)
+app.use("/pregoes", ataRoutes)
 
 app.use("/requisicao", ReqRouter)
 

@@ -4,13 +4,27 @@ export const swaggerSpec = swaggerJsdoc({
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Auth API",
+      title: "Sis Req API",
       version: "1.0.0",
-      description: "API for authentication and user management",
+      description: "API para gestão de requisições e pregões",
     },
     servers: [
       {
         url: "http://localhost:8080",
+      },
+    ],
+    tags: [
+      {
+        name: "Auth",
+        description: "Autenticação e gerenciamento de usuário",
+      },
+      {
+        name: "Pregoes",
+        description: "Gestão de pregões e atas",
+      },
+      {
+        name: "Requisicoes",
+        description: "Gestão de requisições e itens",
       },
     ],
     components: {
@@ -28,5 +42,5 @@ export const swaggerSpec = swaggerJsdoc({
       },
     ],
   },
-  apis: ["./src/routes/*.ts"], // onde ficam as docs
+  apis: ["./src/routes/*.ts"],
 })
