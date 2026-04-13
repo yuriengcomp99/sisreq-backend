@@ -21,7 +21,7 @@ app.use("/auth", authRoutes)
 
 app.use("/pregoes", ataRoutes)
 
-app.use("/requisicao", ReqRouter)
+app.use("/requisicoes", ReqRouter)
 
 app.use("/capacidade", capacidadeRouter)
 

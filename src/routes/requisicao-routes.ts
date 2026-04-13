@@ -31,6 +31,7 @@ const updateController = makeUpdateRequisicaoController()
  *             ug: "160000"
  *             nome_da_ug: "Base X"
  *             descricao_necessidade: "Material diversos"
+ *             notaCreditoId: "uuid-da-nota-credito" 
  *             itens:
  *               - nr_item: "1"
  *                 descricao: "Caneta azul"
@@ -104,6 +105,7 @@ ReqRouter.delete("/:id", (req, res) => {
  *           example:
  *             assunto: "Aquisição atualizada"
  *             descricao_necessidade: "Nova necessidade"
+ *             notaCreditoId: "uuid-da-nota-credito" 
  *             itens:
  *               - id: "uuid-item-1"
  *                 descricao: "Item atualizado"
