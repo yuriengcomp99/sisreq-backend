@@ -8,6 +8,7 @@ import swaggerUi from "swagger-ui-express"
 import { swaggerSpec } from "./docs/swagger.js"
 import { capacidadeRouter } from "./routes/capacidade-routes.js"
 import { NotaCreditoRouter } from "./routes/nota-credito-routes.js"
+import { DesignationRouter } from "./routes/designation-routes.js"
 
 dotenv.config()
 
@@ -25,6 +26,8 @@ app.use("/requisicao", ReqRouter)
 app.use("/capacidade", capacidadeRouter)
 
 app.use("/nota-credito", NotaCreditoRouter)
+
+app.use("/designation", DesignationRouter)
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
