@@ -142,7 +142,9 @@ model NotaCredito {
   id          String   @id @default(uuid())
 
   numero      String
-  emitente    String   @default("BCMS")
+  emitente    String
+  favorecido  String   @default("BCMS")
+
   observacao  String?  @db.Text
   prazo       DateTime
   valor       Float

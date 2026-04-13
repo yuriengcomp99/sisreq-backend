@@ -1,10 +1,10 @@
 import { Router } from "express"
 
-import { makeCreateNotaCreditoController } from "../factories/nota-credito/make-create-nota-credito-controller.js"
-import { makeGetNotasCreditoController } from "../factories/nota-credito/make-get-notas-credito-controller.js"
-import { makeGetNotaCreditoByIdController } from "../factories/nota-credito/make-get-nota-credito-by-id-controller.js"
-import { makeUpdateNotaCreditoController } from "../factories/nota-credito/make-update-nota-credito-controller.js"
-import { makeDeleteNotaCreditoController } from "../factories/nota-credito/make-delete-nota-credito-controller.js"
+import { makeCreateNotaCreditoController } from "../factories/credito/make-create-nota-credito-controller.js"
+import { makeGetNotasCreditoController } from "../factories/credito/make-get-notas-credito-controller.js"
+import { makeGetNotaCreditoByIdController } from "../factories/credito/make-get-nota-credito-by-id-controller.js"
+import { makeUpdateNotaCreditoController } from "../factories/credito/make-update-nota-credito-controller.js"
+import { makeDeleteNotaCreditoController } from "../factories/credito/make-delete-nota-credito-controller.js"
 
 const router = Router()
 
