@@ -7,6 +7,7 @@ import ReqRouter from "./routes/requisicao-routes.js"
 import swaggerUi from "swagger-ui-express"
 import { swaggerSpec } from "./docs/swagger.js"
 import { capacidadeRouter } from "./routes/capacidade-routes.js"
+import { NotaCreditoRouter } from "./routes/nota-credito-routes.js"
 
 dotenv.config()
 
@@ -22,6 +23,8 @@ app.use("/pregoes", ataRoutes)
 app.use("/requisicao", ReqRouter)
 
 app.use("/capacidade", capacidadeRouter)
+
+app.use("/nota-credito", NotaCreditoRouter)
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
