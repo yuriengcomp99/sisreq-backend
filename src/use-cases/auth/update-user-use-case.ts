@@ -48,6 +48,8 @@ export class UpdateUserUseCase {
       ...filteredData
     })
 
-    return userResponseDTO(updatedUser)
+    const userWithRelations = await this.userRepository.findById(id)
+
+    return userResponseDTO(userWithRelations)
   }
 }

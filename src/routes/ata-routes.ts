@@ -83,7 +83,7 @@ ataRoutes.get("/:pregao/:ugg", (req, res) => {
  * @swagger
  * /pregoes/{pregao}/{ugg}/itens:
  *   get:
- *     summary: Lista itens de um pregão
+ *     summary: Lista itens de um pregão (com busca opcional)
  *     tags: [Pregoes]
  *     parameters:
  *       - in: path
@@ -91,14 +91,30 @@ ataRoutes.get("/:pregao/:ugg", (req, res) => {
  *         required: true
  *         schema:
  *           type: string
+ *         description: Número do pregão
  *       - in: path
  *         name: ugg
  *         required: true
  *         schema:
  *           type: string
+ *         description: Código da UGG
+ *       - in: query
+ *         name: search
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Texto para busca na descrição do item
+ *         example: "2629"
  *     responses:
  *       200:
  *         description: Lista de itens do pregão
+ *         content:
+ *           application/json:
+ *             example:
+ *               - nrItem: "1"
+ *                 descricao: "Material hospitalar"
+ *                 qtdSaldo: 10
+ *                 valorUnitario: 100
  */
 ataRoutes.get("/:pregao/:ugg/itens", (req, res) => {
   return searchItensController.handle(req, res)

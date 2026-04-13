@@ -19,6 +19,13 @@ const getUserProfileController = makeGetUserProfileController()
 
 /**
  * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Autenticação e gerenciamento de usuário
+ */
+
+/**
+ * @swagger
  * /auth/login:
  *   post:
  *     summary: Realiza login
@@ -27,9 +34,16 @@ const getUserProfileController = makeGetUserProfileController()
  *       required: true
  *       content:
  *         application/json:
- *           example:
- *             email: admin@email.com
- *             password: 123456
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: admin@email.com
+ *               password:
+ *                 type: string
+ *                 example: "123456"
  *     responses:
  *       200:
  *         description: Login realizado com sucesso
@@ -48,10 +62,37 @@ router.post("/login", (req, res) => {
  *       required: true
  *       content:
  *         application/json:
- *           example:
- *             name: Yuri Rodrigues
- *             email: yuri@email.com
- *             password: 123456
+ *           schema:
+ *             type: object
+ *             required:
+ *               - first_name
+ *               - army_name
+ *               - graduation
+ *               - designationId
+ *               - email
+ *               - password
+ *             properties:
+ *               first_name:
+ *                 type: string
+ *                 example: Carlos
+ *               army_name:
+ *                 type: string
+ *                 example: Silva
+ *               graduation:
+ *                 type: string
+ *                 example: Sargento
+ *               designationId:
+ *                 type: string
+ *                 example: "3240d1a0-6636-46c4-a541-7f25eb24bd69"
+ *               email:
+ *                 type: string
+ *                 example: carlos@email.com
+ *               password:
+ *                 type: string
+ *                 example: "123456"
+ *               role:
+ *                 type: string
+ *                 example: ADMIN
  *     responses:
  *       201:
  *         description: Usuário criado com sucesso
@@ -64,10 +105,26 @@ router.post("/register", (req, res) => {
  * @swagger
  * /auth/me:
  *   get:
- *     summary: Get authenticated user profile
+ *     summary: Pegar dados do usuário logado
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dados do usuário
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: "uuid"
+ *               first_name: "Carlos"
+ *               army_name: "Silva"
+ *               graduation: "Sargento"
+ *               email: "carlos@email.com"
+ *               role: "ADMIN"
+ *               om: "BCMS"
+ *               designation:
+ *                 id: "uuid"
+ *                 position: "Aprovisionador"
  */
 router.get("/me", authMiddleware, (req, res) => {
   return getUserProfileController.handle(req, res)
@@ -77,10 +134,35 @@ router.get("/me", authMiddleware, (req, res) => {
  * @swagger
  * /auth/me:
  *   patch:
- *     summary: Update authenticated user
+ *     summary: Atualizar usuário autenticado
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               first_name:
+ *                 type: string
+ *               army_name:
+ *                 type: string
+ *               graduation:
+ *                 type: string
+ *               designationId:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *           example:
+ *             first_name: "Carlos Atualizado"
+ *             password: "novaSenha123"
+ *     responses:
+ *       200:
+ *         description: Usuário atualizado com sucesso
  */
 router.patch("/me", authMiddleware, (req, res) => {
   return updateUserController.handle(req, res)
@@ -90,10 +172,13 @@ router.patch("/me", authMiddleware, (req, res) => {
  * @swagger
  * /auth/me:
  *   delete:
- *     summary: Delete authenticated user
+ *     summary: Deletar usuário autenticado
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
+ *     responses:
+ *       204:
+ *         description: Usuário deletado com sucesso
  */
 router.delete("/me", authMiddleware, (req, res) => {
   return deleteUserController.handle(req, res)
