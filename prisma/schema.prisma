@@ -105,7 +105,8 @@ model Requisicao {
 
   descricao_necessidade   String   @db.VarChar(500)
 
-  recurso_id              Int
+  notaCreditoId String?
+  notaCredito   NotaCredito? @relation(fields: [notaCreditoId], references: [id])
 
   empenho_tipo            EmpenhoTipo
   contrato                SimNao
@@ -135,4 +136,19 @@ model RequisicaoDetalhe {
   valor_total       Float
 
   createdAt         DateTime @default(now())
+}
+
+model NotaCredito {
+  id          String   @id @default(uuid())
+
+  numero      String
+  emitente    String   @default("BCMS")
+  observacao  String?  @db.Text
+  prazo       DateTime
+  valor       Float
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  requisicoes Requisicao[]
 }
