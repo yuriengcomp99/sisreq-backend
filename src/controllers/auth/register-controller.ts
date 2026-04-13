@@ -6,13 +6,7 @@ export class RegisterController {
 
   async handle(req: Request, res: Response) {
     try {
-      const { name, email, password } = req.body
-
-      const user = await this.registerUseCase.execute({
-        name,
-        email,
-        password
-      })
+      const user = await this.registerUseCase.execute(req.body)
 
       return res.status(201).json(user)
 

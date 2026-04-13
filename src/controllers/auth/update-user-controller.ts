@@ -10,22 +10,17 @@ export class UpdateUserController {
 
       if (!id) {
         return res.status(401).json({
-          error: "Unauthorized",
+          error: "Não Autorizado",
         })
       }
 
-      const { name, email, password } = req.body
-
       const user = await this.updateUserUseCase.execute({
         id,
-        name,
-        email,
-        password,
+        ...req.body
       })
 
-      const { password: _, ...userWithoutPassword } = user
+      return res.json(user)
 
-      return res.json(userWithoutPassword)
     } catch (error: any) {
       return res.status(400).json({
         error: error.message,

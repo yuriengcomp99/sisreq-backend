@@ -1,6 +1,7 @@
 import { UserRepository } from "../../repositories/user/user-repository.js"
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
+import { userResponseDTO } from "../../dto/user-response-dto.js"
 
 export class LoginUseCase {
   constructor(private userRepository: UserRepository) {}
@@ -11,14 +12,14 @@ export class LoginUseCase {
     const user = await this.userRepository.findByEmail(email)
 
     if (!user) {
-      throw new Error("Invalid credentials")
+      throw new Error("Dados Incorretos")
     }
 
 
     const isPasswordValid = await bcrypt.compare(password, user.password)
 
     if (!isPasswordValid) {
-      throw new Error("Invalid credentials")
+      throw new Error("Dados Incorretos")
     }
 
     const token = jwt.sign(
@@ -32,11 +33,7 @@ export class LoginUseCase {
 
     return {
       accessToken: token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email
-      }
+      user: userResponseDTO(user)
     }
   }
 }

@@ -1,4 +1,5 @@
 import { UserRepository } from "../../repositories/user/user-repository.js"
+import { userResponseDTO } from "../../dto/user-response-dto.js"
 
 export class GetUserProfileUseCase {
   constructor(private userRepository: UserRepository) {}
@@ -10,6 +11,6 @@ export class GetUserProfileUseCase {
       throw new Error("User not found")
     }
 
-    return user
+    return userResponseDTO(user)
   }
 }

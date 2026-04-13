@@ -6,12 +6,8 @@ export class LoginController {
 
   async handle(req: Request, res: Response) {
     try {
-      const { email, password } = req.body
 
-      const result = await this.loginUseCase.execute({
-        email,
-        password
-      })
+      const result = await this.loginUseCase.execute(req.body)
 
       return res.json(result)
 

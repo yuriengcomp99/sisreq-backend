@@ -16,9 +16,8 @@ export class GetUserProfileController {
 
       const user = await this.getUserProfileUseCase.execute(userId)
 
-      const { password, ...userWithoutPassword } = user
+      return res.json(user)
 
-      return res.json(userWithoutPassword)
     } catch (error: any) {
       return res.status(400).json({
         error: error.message,
