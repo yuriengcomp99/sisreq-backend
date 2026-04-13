@@ -16,15 +16,9 @@ const deleteController = makeDeleteNotaCreditoController()
 
 /**
  * @swagger
- * tags:
- *   name: NotaCredito
- *   description: Gestão de notas de crédito
- */
-
-/**
- * @swagger
  * /nota-credito:
  *   post:
+ *     tags: [NotaCredito]
  *     summary: Criar nota de crédito
  */
 router.post("/", (req, res) => createController.handle(req, res))
@@ -33,6 +27,7 @@ router.post("/", (req, res) => createController.handle(req, res))
  * @swagger
  * /nota-credito:
  *   get:
+ *     tags: [NotaCredito]
  *     summary: Listar notas de crédito
  */
 router.get("/", (req, res) => getController.handle(req, res))
@@ -41,6 +36,7 @@ router.get("/", (req, res) => getController.handle(req, res))
  * @swagger
  * /nota-credito/{id}:
  *   get:
+ *     tags: [NotaCredito]
  *     summary: Buscar nota por ID
  */
 router.get("/:id", (req, res) => getByIdController.handle(req, res))
@@ -49,6 +45,7 @@ router.get("/:id", (req, res) => getByIdController.handle(req, res))
  * @swagger
  * /nota-credito/{id}:
  *   patch:
+ *     tags: [NotaCredito]
  *     summary: Atualizar nota
  */
 router.patch("/:id", (req, res) => updateController.handle(req, res))
@@ -57,6 +54,7 @@ router.patch("/:id", (req, res) => updateController.handle(req, res))
  * @swagger
  * /nota-credito/{id}:
  *   delete:
+ *     tags: [NotaCredito]
  *     summary: Deletar nota
  */
 router.delete("/:id", (req, res) => deleteController.handle(req, res))

@@ -14,18 +14,11 @@ export const swaggerSpec = swaggerJsdoc({
       },
     ],
     tags: [
-      {
-        name: "Auth",
-        description: "Autenticação e gerenciamento de usuário",
-      },
-      {
-        name: "Pregoes",
-        description: "Gestão de pregões e atas",
-      },
-      {
-        name: "Requisicoes",
-        description: "Gestão de requisições e itens",
-      },
+    { name: "Auth", description: "Autenticação e gerenciamento de usuário" },
+    { name: "Pregoes", description: "Gestão de pregões e atas" },
+    { name: "Requisicoes", description: "Gestão de requisições e itens" },
+    { name: "Capacidade", description: "Pesquisar capacidade de empenho" },
+    { name: "NotaCredito", description: "Gestão de notas de crédito" }
     ],
     components: {
       securitySchemes: {
