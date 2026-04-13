@@ -3,6 +3,7 @@ import { makeCreateRequisicaoController } from "../factories/requisicao/make-cre
 import { makeGetRequisicoesController } from "../factories/requisicao/make-get-requisicoes.js"
 import { makeDeleteRequisicaoController } from "../factories/requisicao/make-delete-requisicao.js"
 import { makeUpdateRequisicaoController } from "../factories/requisicao/make-update-requisicao.js"
+import { makeGetRequisicaoByIdController } from "../factories/requisicao/make-get-requisicao-by-id.js"
 
 const ReqRouter = Router()
 
@@ -10,6 +11,7 @@ const createController = makeCreateRequisicaoController()
 const getController = makeGetRequisicoesController()
 const deleteController = makeDeleteRequisicaoController()
 const updateController = makeUpdateRequisicaoController()
+const getByIdController = makeGetRequisicaoByIdController()
 
 /**
  * @swagger
@@ -65,8 +67,8 @@ ReqRouter.get("/", (req, res) => {
 /**
  * @swagger
  * /requisicoes/{id}:
- *   delete:
- *     summary: Remove uma requisição
+ *   get:
+ *     summary: Buscar uma requisição por ID
  *     tags: [Requisicoes]
  *     parameters:
  *       - in: path
@@ -77,12 +79,12 @@ ReqRouter.get("/", (req, res) => {
  *           example: "uuid-da-requisicao"
  *     responses:
  *       200:
- *         description: Requisição deletada com sucesso
+ *         description: Requisição encontrada
  *       404:
  *         description: Requisição não encontrada
  */
-ReqRouter.delete("/:id", (req, res) => {
-  return deleteController.handle(req, res)
+ReqRouter.get("/:id", (req, res) => {
+  return getByIdController.handle(req, res)
 })
 
 /**
@@ -125,6 +127,29 @@ ReqRouter.delete("/:id", (req, res) => {
  */
 ReqRouter.patch("/:id", (req, res) => {
   return updateController.handle(req, res)
+})
+
+/**
+ * @swagger
+ * /requisicoes/{id}:
+ *   delete:
+ *     summary: Remove uma requisição
+ *     tags: [Requisicoes]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "uuid-da-requisicao"
+ *     responses:
+ *       200:
+ *         description: Requisição deletada com sucesso
+ *       404:
+ *         description: Requisição não encontrada
+ */
+ReqRouter.delete("/:id", (req, res) => {
+  return deleteController.handle(req, res)
 })
 
 export default ReqRouter

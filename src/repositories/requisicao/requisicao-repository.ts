@@ -36,4 +36,13 @@ export class RequisicaoRepository {
       data,
     })
   }
+  async findById(id: string) {
+    return prisma.requisicao.findUnique({
+      where: { id },
+      include: {
+        detalhes: true,
+        notaCredito: true // 🔥 importante
+      }
+    })
+  }
 }
