@@ -1,5 +1,9 @@
 import { Request, Response } from "express"
 import { GetPregoesUseCase } from "../../use-cases/ata/get-pregoes-usecase.js"
+import {
+  errorResponse,
+  successResponse,
+} from "../../helpers/api-response.js"
 
 export class GetPregoesController {
   constructor(private useCase: GetPregoesUseCase) {}
@@ -8,13 +12,13 @@ export class GetPregoesController {
     try {
       const data = await this.useCase.execute()
 
-      return res.status(200).json(data)
+      return res.status(200).json(successResponse(data))
     } catch (error) {
       console.error(error)
 
-      return res.status(500).json({
-        error: "Erro ao buscar pregões",
-      })
+      return res
+        .status(500)
+        .json(errorResponse("Erro ao buscar pregões", error))
     }
   }
 }
