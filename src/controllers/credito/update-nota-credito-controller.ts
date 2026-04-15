@@ -1,12 +1,21 @@
+import {
+  errorResponse,
+  successResponse,
+} from "../../helpers/api-response.js"
+
 export class UpdateNotaCreditoController {
   constructor(private useCase: any) {}
 
   async handle(req: any, res: any) {
     try {
       const nota = await this.useCase.execute(req.params.id, req.body)
-      return res.json(nota)
+      return res
+        .status(200)
+        .json(successResponse(nota, "Nota de crédito atualizada com sucesso"))
     } catch (err: any) {
-      return res.status(400).json({ error: err.message })
+      return res
+        .status(400)
+        .json(errorResponse("Falha ao atualizar nota de crédito", err))
     }
   }
 }
