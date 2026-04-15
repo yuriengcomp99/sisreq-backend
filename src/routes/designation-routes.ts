@@ -5,6 +5,7 @@ import { makeGetDesignationsController } from "../factories/setor/make-get-desig
 import { makeGetDesignationByIdController } from "../factories/setor/make-get-designation-by-id-controller.js"
 import { makeUpdateDesignationController } from "../factories/setor/make-update-designation-controller.js"
 import { makeDeleteDesignationController } from "../factories/setor/make-delete-designation-controller.js"
+import { authMiddleware } from "../middlewares/auth-middleware.js"
 
 const router = Router()
 
@@ -28,7 +29,7 @@ const deleteController = makeDeleteDesignationController()
  *     tags: [Designation]
  *     summary: Criar designation
  */
-router.post("/", (req, res) => createController.handle(req, res))
+router.post("/", authMiddleware, (req, res) => createController.handle(req, res))
 
 /**
  * @swagger
@@ -37,7 +38,7 @@ router.post("/", (req, res) => createController.handle(req, res))
  *     tags: [Designation]
  *     summary: Listar designations
  */
-router.get("/", (req, res) => getController.handle(req, res))
+router.get("/", authMiddleware, (req, res) => getController.handle(req, res))
 
 /**
  * @swagger
@@ -46,7 +47,7 @@ router.get("/", (req, res) => getController.handle(req, res))
  *     tags: [Designation]
  *     summary: Buscar designation por ID
  */
-router.get("/:id", (req, res) => getByIdController.handle(req, res))
+router.get("/:id", authMiddleware, (req, res) => getByIdController.handle(req, res))
 
 /**
  * @swagger
@@ -55,7 +56,7 @@ router.get("/:id", (req, res) => getByIdController.handle(req, res))
  *     tags: [Designation]
  *     summary: Atualizar designation
  */
-router.patch("/:id", (req, res) => updateController.handle(req, res))
+router.patch("/:id",authMiddleware, (req, res) => updateController.handle(req, res))
 
 /**
  * @swagger
@@ -64,6 +65,6 @@ router.patch("/:id", (req, res) => updateController.handle(req, res))
  *     tags: [Designation]
  *     summary: Deletar designation
  */
-router.delete("/:id", (req, res) => deleteController.handle(req, res))
+router.delete("/:id",authMiddleware, (req, res) => deleteController.handle(req, res))
 
 export { router as DesignationRouter }

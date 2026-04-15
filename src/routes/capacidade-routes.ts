@@ -1,5 +1,6 @@
 import { Router } from "express"
 import { makeGetCapacidadeController } from "../factories/capacidade/make-get-capacidade.js"
+import { authMiddleware } from "../middlewares/auth-middleware.js"
 
 const getCapacidadeController = makeGetCapacidadeController()
 
@@ -48,7 +49,7 @@ const capacidadeRouter = Router();
  *       500:
  *         description: Erro interno do servidor
  */
-capacidadeRouter.get("/", (req, res) => {
+capacidadeRouter.get("/",authMiddleware, (req, res) => {
   return getCapacidadeController.handle(req, res)
 })
 

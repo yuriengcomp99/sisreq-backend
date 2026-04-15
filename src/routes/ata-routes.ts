@@ -4,6 +4,7 @@ import { makeImportAtaController } from "../factories/ata/make-import-ata.js"
 import { makeGetPregoesController } from "../factories/ata/make-get-pregoes.js"
 import { makeGetPregaoByUggController } from "../factories/ata/make-get-pregao-by-ugg.js"
 import { makeSearchItensController } from "../factories/ata/make-search-itens.js"
+import { authMiddleware } from "../middlewares/auth-middleware.js"
 
 const ataRoutes = Router()
 const upload = multer({ dest: "uploads/" })
@@ -33,7 +34,7 @@ const searchItensController = makeSearchItensController()
  *         description: Arquivo importado com sucesso
  */
 ataRoutes.post(
-  "/import",
+  "/import", authMiddleware ,
   upload.single("file"),
   (req, res) => controller.handle(req, res)
 )
@@ -48,7 +49,7 @@ ataRoutes.post(
  *       200:
  *         description: Lista de pregões
  */
-ataRoutes.get("/", (req, res) =>
+ataRoutes.get("/", authMiddleware, (req, res) =>
   getPregoesController.handle(req, res)
 )
 
@@ -75,7 +76,7 @@ ataRoutes.get("/", (req, res) =>
  *       200:
  *         description: Dados do pregão
  */
-ataRoutes.get("/:pregao/:ugg", (req, res) => {
+ataRoutes.get("/:pregao/:ugg",authMiddleware, (req, res) => {
   return getPregaoController.handle(req, res)
 })
 
@@ -116,7 +117,7 @@ ataRoutes.get("/:pregao/:ugg", (req, res) => {
  *                 qtdSaldo: 10
  *                 valorUnitario: 100
  */
-ataRoutes.get("/:pregao/:ugg/itens", (req, res) => {
+ataRoutes.get("/:pregao/:ugg/itens",authMiddleware, (req, res) => {
   return searchItensController.handle(req, res)
 })
 

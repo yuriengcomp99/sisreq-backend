@@ -4,6 +4,7 @@ import { makeGetRequisicoesController } from "../factories/requisicao/make-get-r
 import { makeDeleteRequisicaoController } from "../factories/requisicao/make-delete-requisicao.js"
 import { makeUpdateRequisicaoController } from "../factories/requisicao/make-update-requisicao.js"
 import { makeGetRequisicaoByIdController } from "../factories/requisicao/make-get-requisicao-by-id.js"
+import { authMiddleware } from "../middlewares/auth-middleware.js"
 
 const ReqRouter = Router()
 
@@ -46,7 +47,7 @@ const getByIdController = makeGetRequisicaoByIdController()
  *       201:
  *         description: Requisição criada com sucesso
  */
-ReqRouter.post("/", (req, res) => {
+ReqRouter.post("/",authMiddleware, (req, res) => {
   return createController.create(req, res)
 })
 
@@ -60,7 +61,7 @@ ReqRouter.post("/", (req, res) => {
  *       200:
  *         description: Lista de requisições
  */
-ReqRouter.get("/", (req, res) => {
+ReqRouter.get("/",authMiddleware, (req, res) => {
   return getController.handle(req, res)
 })
 
@@ -83,7 +84,7 @@ ReqRouter.get("/", (req, res) => {
  *       404:
  *         description: Requisição não encontrada
  */
-ReqRouter.get("/:id", (req, res) => {
+ReqRouter.get("/:id",authMiddleware, (req, res) => {
   return getByIdController.handle(req, res)
 })
 
@@ -125,7 +126,7 @@ ReqRouter.get("/:id", (req, res) => {
  *       404:
  *         description: Requisição não encontrada
  */
-ReqRouter.patch("/:id", (req, res) => {
+ReqRouter.patch("/:id",authMiddleware, (req, res) => {
   return updateController.handle(req, res)
 })
 
@@ -148,7 +149,7 @@ ReqRouter.patch("/:id", (req, res) => {
  *       404:
  *         description: Requisição não encontrada
  */
-ReqRouter.delete("/:id", (req, res) => {
+ReqRouter.delete("/:id",authMiddleware, (req, res) => {
   return deleteController.handle(req, res)
 })
 
