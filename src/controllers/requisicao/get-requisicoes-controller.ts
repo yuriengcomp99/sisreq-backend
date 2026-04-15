@@ -1,5 +1,9 @@
 import { Request, Response } from "express"
 import { GetRequisicoesUseCase } from "../../use-cases/requisicao/get-requisicoes-usecase.js"
+import {
+  errorResponse,
+  successResponse,
+} from "../../helpers/api-response.js"
 
 export class GetRequisicoesController {
   constructor(private getRequisicoesUseCase: GetRequisicoesUseCase) {}
@@ -8,11 +12,11 @@ export class GetRequisicoesController {
     try {
       const requisicoes = await this.getRequisicoesUseCase.execute()
 
-      return res.status(200).json(requisicoes)
+      return res.status(200).json(successResponse(requisicoes))
     } catch (error) {
-      return res.status(500).json({
-        message: "Erro ao buscar requisições",
-      })
+      return res
+        .status(500)
+        .json(errorResponse("Erro ao buscar requisições", error))
     }
   }
 }
