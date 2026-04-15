@@ -14,7 +14,7 @@ export function authMiddleware(
 
   if (!authHeader) {
     return res.status(401).json({
-      error: "Token not provided",
+      error: "Token não enviado",
     })
   }
 
@@ -22,7 +22,7 @@ export function authMiddleware(
 
   if (!token) {
     return res.status(401).json({
-      error: "Invalid token",
+      error: "token Inválido",
     })
   }
 
@@ -37,7 +37,7 @@ export function authMiddleware(
     return next()
   } catch (error) {
     return res.status(401).json({
-      error: "Invalid or expired token",
+      error: "token inválido ou expirado",
     })
   }
 }
