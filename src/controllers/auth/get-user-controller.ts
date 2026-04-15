@@ -13,7 +13,7 @@ export class GetUserProfileController {
       const { userId } = req as Request & { userId?: string }
 
       if (!userId) {
-        return res.status(401).json(errorResponse("Unauthorized"))
+        return res.status(401).json(errorResponse("Não autorizado"))
       }
 
       const user = await this.getUserProfileUseCase.execute(userId)
