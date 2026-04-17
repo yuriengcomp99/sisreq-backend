@@ -1,20 +1,36 @@
 import { UserRepository } from "../../repositories/user/user-repository.js"
 import bcrypt from "bcrypt"
-import jwt from "jsonwebtoken"
 import { userResponseDTO } from "../../dto/user-response-dto.js"
+import { signAccessToken, signRefreshToken } from "../../helpers/auth/jwt-tokens.js"
+
+export class LoginPayloadInvalidError extends Error {
+  constructor() {
+    super("Informe email e senha válidos")
+    this.name = "LoginPayloadInvalidError"
+  }
+}
 
 export class LoginUseCase {
   constructor(private userRepository: UserRepository) {}
 
   async execute(data: { email: string; password: string }) {
-    const { email, password } = data
+    const email = data?.email
+    const password = data?.password
 
-    const user = await this.userRepository.findByEmail(email)
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      !email.trim() ||
+      password.length === 0
+    ) {
+      throw new LoginPayloadInvalidError()
+    }
+
+    const user = await this.userRepository.findByEmail(email.trim())
 
     if (!user) {
       throw new Error("Dados Incorretos")
     }
-
 
     const isPasswordValid = await bcrypt.compare(password, user.password)
 
@@ -22,18 +38,13 @@ export class LoginUseCase {
       throw new Error("Dados Incorretos")
     }
 
-    const token = jwt.sign(
-      {},
-      process.env.JWT_SECRET as string,
-      {
-        subject: user.id,
-        expiresIn: "15m",
-      }
-    )
+    const accessToken = signAccessToken(user.id)
+    const refreshToken = signRefreshToken(user.id)
 
     return {
-      accessToken: token,
-      user: userResponseDTO(user)
+      accessToken,
+      refreshToken,
+      user: userResponseDTO(user),
     }
   }
 }

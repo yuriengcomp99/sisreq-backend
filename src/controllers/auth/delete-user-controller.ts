@@ -10,10 +10,10 @@ export class DeleteUserController {
 
   async handle(req: Request, res: Response) {
     try {
-      const { userId } = req as Request & { userId?: string }
+      const userId = req.userId
 
       if (!userId) {
-        return res.status(401).json(errorResponse("Não autorizado"))
+        return res.status(401).json(errorResponse("Não autorizado", null))
       }
 
       await this.deleteUserUseCase.execute(userId)

@@ -1,43 +1,41 @@
 import { Request, Response, NextFunction } from "express"
-import jwt from "jsonwebtoken"
-
-interface JwtPayload {
-  sub: string
-}
+import { verifyAccessToken } from "../helpers/auth/jwt-tokens.js"
+import { errorResponse } from "../helpers/api-response.js"
 
 export function authMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
-  const authHeader = req.headers.authorization
+  const authHeader = req.headers.authorization?.trim()
 
   if (!authHeader) {
-    return res.status(401).json({
-      error: "Token não enviado",
-    })
+    return res
+      .status(401)
+      .json(errorResponse("Token de acesso não enviado", null))
   }
 
-  const [, token] = authHeader.split(" ")
+  const bearer = /^Bearer\s+(.+)$/i.exec(authHeader)
+  const token = bearer?.[1]?.trim()
 
   if (!token) {
-    return res.status(401).json({
-      error: "token Inválido",
-    })
+    return res
+      .status(401)
+      .json(
+        errorResponse(
+          "Cabeçalho inválido. Use: Authorization: Bearer <accessToken>",
+          null
+        )
+      )
   }
 
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET as string
-    ) as JwtPayload
-
-    req.userId = decoded.sub
-
+    const payload = verifyAccessToken(token)
+    req.userId = payload.sub
     return next()
-  } catch (error) {
-    return res.status(401).json({
-      error: "token inválido ou expirado",
-    })
+  } catch {
+    return res
+      .status(401)
+      .json(errorResponse("Token inválido ou expirado", null))
   }
 }

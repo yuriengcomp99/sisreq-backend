@@ -23,11 +23,12 @@ export class AtaRepository {
   async upsert(data: AtaData) {
     return prisma.ataItem.upsert({
       where: {
-        pregao_nrAta_nrItem: {
+        pregao_ugg_nrAta_nrItem: {
           pregao: data.pregao,
+          ugg: data.ugg,
           nrAta: data.nrAta,
           nrItem: data.nrItem,
-        },
+        }
       },
       update: data,
       create: data,

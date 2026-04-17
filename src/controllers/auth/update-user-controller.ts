@@ -10,10 +10,10 @@ export class UpdateUserController {
 
   async handle(req: Request, res: Response) {
     try {
-      const { userId: id } = req as Request & { userId?: string }
+      const id = req.userId
 
       if (!id) {
-        return res.status(401).json(errorResponse("Não autorizado"))
+        return res.status(401).json(errorResponse("Não autorizado", null))
       }
 
       const user = await this.updateUserUseCase.execute({

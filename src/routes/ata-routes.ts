@@ -7,7 +7,12 @@ import { makeSearchItensController } from "../factories/ata/make-search-itens.js
 import { authMiddleware } from "../middlewares/auth-middleware.js"
 
 const ataRoutes = Router()
-const upload = multer({ dest: "uploads/" })
+const upload = multer({
+  dest: "uploads/",
+  limits: {
+    fileSize: 20 * 1024 * 1024,
+  },
+})
 const controller = makeImportAtaController()
 const getPregoesController = makeGetPregoesController()
 const getPregaoController = makeGetPregaoByUggController()

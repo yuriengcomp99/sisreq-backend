@@ -18,6 +18,7 @@ export const swaggerSpec = swaggerJsdoc({
     { name: "Pregoes", description: "Gestão de pregões e atas" },
     { name: "Requisicoes", description: "Gestão de requisições e itens" },
     { name: "Capacidade", description: "Pesquisar capacidade de empenho" },
+    { name: "Designation", description: "Gestão de setores/cargos" },
     { name: "NotaCredito", description: "Gestão de notas de crédito" }
     ],
     components: {

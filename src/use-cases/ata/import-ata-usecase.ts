@@ -9,29 +9,35 @@ export class ImportAtaUseCase {
     const sheet = workbook.Sheets[workbook.SheetNames[0]]
     const rows = XLSX.utils.sheet_to_json(sheet)
 
+    console.log("🔎 Exemplo linha:", rows[0])
+
     const chunkSize = 50
 
     for (let i = 0; i < rows.length; i += chunkSize) {
       const chunk = rows.slice(i, i + chunkSize)
 
       await Promise.all(
-        chunk.map((row) => {
+        chunk.map((row: any) => {
           const data = {
-            pregao: String(row["Pregão"]),
-            objeto: String(row["Objeto"]),
-            ugg: String(row["UGG"]),
-            nrAta: String(row["Nr Ata"]),
-            nrItem: String(row["Nr Item"]),
-            descricao: String(row["Descrição detalhada"]),
-            fornecedor: String(row["Fornecedor"]),
+            pregao: this.safeString(row["Pregão"]),
+            objeto: this.safeString(row["Objeto"]),
+            ugg: this.safeString(row["UGG"]),
+            nrAta: this.safeString(row["Nr Ata"]),
+            nrItem: this.safeString(row["Nr Item"]),
+            descricao: this.safeString(row["Descrição detalhada"]),
+            fornecedor: this.safeString(row["Fornecedor"]),
+
             inicioVigAta: this.parseDate(row["Início Vig Ata"]),
             fimVigAta: this.parseDate(row["Fim Vig Ata"]),
+
             valorUnitario: this.parseMoney(row["Val. Unitário"]),
-            uasg: String(row["UASG"]),
-            tipoUasg: String(row["Tipo UASG"]),
-            qtdHomologada: Number(row["Qtd Homologada"]),
-            qtdAutorizada: Number(row["Qtd. Autorizada"]),
-            qtdSaldo: Number(row["Qtd. Saldo"]),
+
+            uasg: this.safeString(row["UASG"]),
+            tipoUasg: this.safeString(row["Tipo UASG"]),
+
+            qtdHomologada: this.parseNumber(row["Qtd Homologada"]),
+            qtdAutorizada: this.parseNumber(row["Qtd. Autorizada"]),
+            qtdSaldo: this.parseNumber(row["Qtd. Saldo"]),
           }
 
           return this.repository.upsert(data)
@@ -39,13 +45,18 @@ export class ImportAtaUseCase {
       )
 
       console.log(
-        `✅ Processado: ${Math.min(i + chunkSize, rows.length)} de ${rows.length}`
+        `Processado: ${Math.min(i + chunkSize, rows.length)} de ${rows.length}`
       )
     }
   }
 
-  private parseMoney(value: any): number {
-    if (!value || value === "Informação ausente") return 0
+  private safeString(value: any): string {
+    if (!value || value === "Informação ausente") return ""
+    return String(value).trim()
+  }
+
+  private parseNumber(value: any): number {
+    if (!value) return 0
 
     if (typeof value === "number") return value
 
@@ -57,6 +68,10 @@ export class ImportAtaUseCase {
     }
 
     return 0
+  }
+
+  private parseMoney(value: any): number {
+    return this.parseNumber(value)
   }
 
   private parseDate(value: any): Date {

@@ -2,4 +2,9 @@ node_modules
 # Keep environment variables out of version control
 .env
 
+cookies.txt
+login-local.json
+
+uploads/
+
 /src/generated/prisma

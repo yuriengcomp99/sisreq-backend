@@ -1,6 +1,7 @@
+import { env } from "./config/env.js"
 import express from "express"
-import dotenv from "dotenv"
 import cors from "cors"
+import cookieParser from "cookie-parser"
 import authRoutes from "./routes/auth-routes.js"
 import { ataRoutes }  from "./routes/ata-routes.js"
 import ReqRouter from "./routes/requisicao-routes.js"
@@ -10,11 +11,21 @@ import { capacidadeRouter } from "./routes/capacidade-routes.js"
 import { NotaCreditoRouter } from "./routes/nota-credito-routes.js"
 import { DesignationRouter } from "./routes/designation-routes.js"
 
-dotenv.config()
-
 const app = express()
 
-app.use(cors({ origin: "*" }))
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) {
+        callback(null, true)
+        return
+      }
+      callback(null, env.frontendOrigins.includes(origin))
+    },
+    credentials: true,
+  })
+)
+app.use(cookieParser())
 app.use(express.json())
 
 app.use("/auth", authRoutes)

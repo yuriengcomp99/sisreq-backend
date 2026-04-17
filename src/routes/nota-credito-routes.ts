@@ -21,6 +21,38 @@ const deleteController = makeDeleteNotaCreditoController()
  *   post:
  *     tags: [NotaCredito]
  *     summary: Criar nota de crédito
+ *     description: Cadastra uma nova nota de crédito para associação em requisições.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             numero: "2026NC000123"
+ *             emitente: "160001 - Base Central"
+ *             favorecido: "BCMS"
+ *             observacao: "Crédito para aquisição de material de expediente"
+ *             prazo: "2026-12-31T00:00:00.000Z"
+ *             valor: 15000
+ *     responses:
+ *       201:
+ *         description: Nota de crédito criada com sucesso
+ *         content:
+ *           application/json:
+ *             example:
+ *               sucesso: true
+ *               mensagem: "Nota de crédito criada com sucesso"
+ *               dados:
+ *                 id: "f9f4f6f1-8f53-4d7d-9b77-3b89ac7f8d12"
+ *                 numero: "2026NC000123"
+ *                 emitente: "160001 - Base Central"
+ *                 favorecido: "BCMS"
+ *                 observacao: "Crédito para aquisição de material de expediente"
+ *                 prazo: "2026-12-31T00:00:00.000Z"
+ *                 valor: 15000
+ *                 createdAt: "2026-04-15T10:00:00.000Z"
+ *                 updatedAt: "2026-04-15T10:00:00.000Z"
+ *       400:
+ *         description: Dados inválidos para criação da nota de crédito
  */
 router.post("/",authMiddleware, (req, res) => createController.handle(req, res))
 
@@ -30,6 +62,36 @@ router.post("/",authMiddleware, (req, res) => createController.handle(req, res))
  *   get:
  *     tags: [NotaCredito]
  *     summary: Listar notas de crédito
+ *     description: Retorna todas as notas de crédito cadastradas.
+ *     responses:
+ *       200:
+ *         description: Lista de notas de crédito
+ *         content:
+ *           application/json:
+ *             example:
+ *               sucesso: true
+ *               mensagem: "Operação realizada com sucesso"
+ *               dados:
+ *                 - id: "f9f4f6f1-8f53-4d7d-9b77-3b89ac7f8d12"
+ *                   numero: "2026NC000123"
+ *                   emitente: "160001 - Base Central"
+ *                   favorecido: "BCMS"
+ *                   observacao: "Crédito para aquisição de material de expediente"
+ *                   prazo: "2026-12-31T00:00:00.000Z"
+ *                   valor: 15000
+ *                   createdAt: "2026-04-15T10:00:00.000Z"
+ *                   updatedAt: "2026-04-15T10:00:00.000Z"
+ *                 - id: "7de7c541-8c6d-4ce4-a1af-cf3a7d7a6a8d"
+ *                   numero: "2026NC000124"
+ *                   emitente: "160001 - Base Central"
+ *                   favorecido: "BCMS"
+ *                   observacao: null
+ *                   prazo: "2026-11-30T00:00:00.000Z"
+ *                   valor: 8000
+ *                   createdAt: "2026-04-16T09:30:00.000Z"
+ *                   updatedAt: "2026-04-16T09:30:00.000Z"
+ *       500:
+ *         description: Erro ao buscar notas de crédito
  */
 router.get("/",authMiddleware, (req, res) => getController.handle(req, res))
 
@@ -39,6 +101,33 @@ router.get("/",authMiddleware, (req, res) => getController.handle(req, res))
  *   get:
  *     tags: [NotaCredito]
  *     summary: Buscar nota por ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "f9f4f6f1-8f53-4d7d-9b77-3b89ac7f8d12"
+ *     responses:
+ *       200:
+ *         description: Nota de crédito encontrada
+ *         content:
+ *           application/json:
+ *             example:
+ *               sucesso: true
+ *               mensagem: "Operação realizada com sucesso"
+ *               dados:
+ *                 id: "f9f4f6f1-8f53-4d7d-9b77-3b89ac7f8d12"
+ *                 numero: "2026NC000123"
+ *                 emitente: "160001 - Base Central"
+ *                 favorecido: "BCMS"
+ *                 observacao: "Crédito para aquisição de material de expediente"
+ *                 prazo: "2026-12-31T00:00:00.000Z"
+ *                 valor: 15000
+ *                 createdAt: "2026-04-15T10:00:00.000Z"
+ *                 updatedAt: "2026-04-15T10:00:00.000Z"
+ *       404:
+ *         description: Nota de crédito não encontrada
  */
 router.get("/:id",authMiddleware, (req, res) => getByIdController.handle(req, res))
 
@@ -48,6 +137,41 @@ router.get("/:id",authMiddleware, (req, res) => getByIdController.handle(req, re
  *   patch:
  *     tags: [NotaCredito]
  *     summary: Atualizar nota
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "f9f4f6f1-8f53-4d7d-9b77-3b89ac7f8d12"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             observacao: "Crédito atualizado para aquisição de TI"
+ *             valor: 18000
+ *             prazo: "2027-01-31T00:00:00.000Z"
+ *     responses:
+ *       200:
+ *         description: Nota de crédito atualizada com sucesso
+ *         content:
+ *           application/json:
+ *             example:
+ *               sucesso: true
+ *               mensagem: "Nota de crédito atualizada com sucesso"
+ *               dados:
+ *                 id: "f9f4f6f1-8f53-4d7d-9b77-3b89ac7f8d12"
+ *                 numero: "2026NC000123"
+ *                 emitente: "160001 - Base Central"
+ *                 favorecido: "BCMS"
+ *                 observacao: "Crédito atualizado para aquisição de TI"
+ *                 prazo: "2027-01-31T00:00:00.000Z"
+ *                 valor: 18000
+ *                 createdAt: "2026-04-15T10:00:00.000Z"
+ *                 updatedAt: "2026-04-20T11:00:00.000Z"
+ *       400:
+ *         description: Dados inválidos para atualização da nota de crédito
  */
 router.patch("/:id",authMiddleware, (req, res) => updateController.handle(req, res))
 
@@ -57,6 +181,24 @@ router.patch("/:id",authMiddleware, (req, res) => updateController.handle(req, r
  *   delete:
  *     tags: [NotaCredito]
  *     summary: Deletar nota
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "f9f4f6f1-8f53-4d7d-9b77-3b89ac7f8d12"
+ *     responses:
+ *       200:
+ *         description: Nota de crédito removida com sucesso
+ *         content:
+ *           application/json:
+ *             example:
+ *               sucesso: true
+ *               mensagem: "Nota de crédito removida com sucesso"
+ *               dados: null
+ *       400:
+ *         description: Falha ao remover nota de crédito
  */
 router.delete("/:id",authMiddleware, (req, res) => deleteController.handle(req, res))
 

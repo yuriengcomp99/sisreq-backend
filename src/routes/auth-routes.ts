@@ -7,10 +7,14 @@ import { makeRegisterController } from "../factories/auth/make-register.js"
 import { makeUpdateUserController } from "../factories/auth/make-update-user-controller.js"
 import { makeDeleteUserController } from "../factories/auth/make-delete-user-controller.js"
 import { makeGetUserProfileController } from "../factories/auth/make-get-user-controller.js"
+import { makeRefreshTokenController } from "../factories/auth/make-refresh-token.js"
+import { makeLogoutController } from "../factories/auth/make-logout.js"
 
 const router = Router()
 
 const loginController = makeLoginController()
+const refreshTokenController = makeRefreshTokenController()
+const logoutController = makeLogoutController()
 const registerController = makeRegisterController()
 
 const updateUserController = makeUpdateUserController()
@@ -50,6 +54,36 @@ const getUserProfileController = makeGetUserProfileController()
  */
 router.post("/login", (req, res) => {
   return loginController.handle(req, res)
+})
+
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Renovar access token (envia refresh no cookie HttpOnly)
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Novo access token
+ *       401:
+ *         description: Refresh inválido ou ausente
+ */
+router.post("/refresh", (req, res) => {
+  return refreshTokenController.handle(req, res)
+})
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Encerra sessão (remove cookie HttpOnly do refresh)
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Logout realizado; cookie de refresh limpo
+ */
+router.post("/logout", (req, res) => {
+  return logoutController.handle(req, res)
 })
 
 /**
