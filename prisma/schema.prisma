@@ -39,7 +39,8 @@ model User {
   om           String   @default("BCMS")
   createdAt    DateTime @default(now())
 
-  requisicoes  Requisicao[]
+  requisicoes   Requisicao[]
+  notasCredito  NotaCredito[]
 }
 
 model Designation {
@@ -139,6 +140,9 @@ model RequisicaoDetalhe {
 
 model NotaCredito {
   id          String   @id @default(uuid())
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
 
   numero      String
   emitente    String

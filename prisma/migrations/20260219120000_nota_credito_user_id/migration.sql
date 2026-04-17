@@ -1,0 +1,7 @@
+ALTER TABLE "NotaCredito" ADD COLUMN "userId" TEXT;
+
+UPDATE "NotaCredito" SET "userId" = (SELECT id FROM "User" LIMIT 1) WHERE "userId" IS NULL;
+
+ALTER TABLE "NotaCredito" ALTER COLUMN "userId" SET NOT NULL;
+
+ALTER TABLE "NotaCredito" ADD CONSTRAINT "NotaCredito_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
