@@ -20,25 +20,33 @@ export class NotaCreditoRepository {
   async findByIdScoped(
     id: string,
     userId: string,
-    role: UserRole
+    role: UserRole,
+    options?: { includeRequisicoesResumo?: boolean }
   ) {
     const where = {
       id,
       ...(role === UserRole.ADMIN ? {} : { userId }),
     } as Prisma.NotaCreditoWhereInput
+
+    const includeResumo = options?.includeRequisicoesResumo === true
+
     return prisma.notaCredito.findFirst({
       where,
-      include: {
-        requisicoes: {
-          select: {
-            id: true,
-            numero_diex: true,
-            nup: true,
-            data_req: true,
-            assunto: true,
-          },
-        },
-      },
+      ...(includeResumo
+        ? {
+            include: {
+              requisicoes: {
+                select: {
+                  id: true,
+                  numero_diex: true,
+                  nup: true,
+                  data_req: true,
+                  assunto: true,
+                },
+              },
+            },
+          }
+        : {}),
     })
   }
 

@@ -3,6 +3,7 @@ import { Router } from "express"
 import { makeCreateNotaCreditoController } from "../factories/credito/make-create-nota-credito-controller.js"
 import { makeGetNotasCreditoController } from "../factories/credito/make-get-notas-credito-controller.js"
 import { makeGetNotaCreditoByIdController } from "../factories/credito/make-get-nota-credito-by-id-controller.js"
+import { makeGetNotaCreditoRequisicoesController } from "../factories/credito/make-get-nota-credito-requisicoes-controller.js"
 import { makeUpdateNotaCreditoController } from "../factories/credito/make-update-nota-credito-controller.js"
 import { makeDeleteNotaCreditoController } from "../factories/credito/make-delete-nota-credito-controller.js"
 import { authMiddleware } from "../middlewares/auth-middleware.js"
@@ -12,6 +13,8 @@ const router = Router()
 const createController = makeCreateNotaCreditoController()
 const getController = makeGetNotasCreditoController()
 const getByIdController = makeGetNotaCreditoByIdController()
+const getNotaCreditoRequisicoesController =
+  makeGetNotaCreditoRequisicoesController()
 const updateController = makeUpdateNotaCreditoController()
 const deleteController = makeDeleteNotaCreditoController()
 
@@ -100,6 +103,31 @@ router.post("/",authMiddleware, (req, res) => createController.handle(req, res))
  *         description: Erro ao buscar notas de crédito
  */
 router.get("/",authMiddleware, (req, res) => getController.handle(req, res))
+
+/**
+ * @swagger
+ * /nota-credito/{id}/requisicoes:
+ *   get:
+ *     tags: [NotaCredito]
+ *     summary: Nota de crédito com requisições vinculadas (sem itens)
+ *     description: Mesmos dados da nota que GET /nota-credito/{id} (incluindo resumo de valores), mais lista de requisições sem detalhes/itens.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Objeto com `nota` e array `requisicoes`
+ *       404:
+ *         description: Nota não encontrada ou sem permissão
+ */
+router.get(
+  "/:id/requisicoes",
+  authMiddleware,
+  (req, res) => getNotaCreditoRequisicoesController.handle(req, res)
+)
 
 /**
  * @swagger

@@ -45,4 +45,12 @@ export class RequisicaoRepository {
       }
     })
   }
+
+  /** Requisições vinculadas à nota, sem carregar itens (detalhes). */
+  async findByNotaCreditoIdSemDetalhes(notaCreditoId: string) {
+    return prisma.requisicao.findMany({
+      where: { notaCreditoId },
+      orderBy: { createdAt: "desc" },
+    })
+  }
 }
