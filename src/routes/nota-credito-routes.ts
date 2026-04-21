@@ -62,7 +62,7 @@ router.post("/",authMiddleware, (req, res) => createController.handle(req, res))
  *   get:
  *     tags: [NotaCredito]
  *     summary: Listar notas de crédito
- *     description: Retorna todas as notas de crédito cadastradas.
+ *     description: Retorna todas as notas de crédito cadastradas, com resumo de requisições vinculadas (quantidade, valor total consumido nas linhas das requisições e saldo valor da nota menos esse total).
  *     responses:
  *       200:
  *         description: Lista de notas de crédito
@@ -79,6 +79,9 @@ router.post("/",authMiddleware, (req, res) => createController.handle(req, res))
  *                   observacao: "Crédito para aquisição de material de expediente"
  *                   prazo: "2026-12-31T00:00:00.000Z"
  *                   valor: 15000
+ *                   requisicaoCount: 2
+ *                   valorTotalRequisicoes: 5000
+ *                   valorRestante: 10000
  *                   createdAt: "2026-04-15T10:00:00.000Z"
  *                   updatedAt: "2026-04-15T10:00:00.000Z"
  *                 - id: "7de7c541-8c6d-4ce4-a1af-cf3a7d7a6a8d"
@@ -88,6 +91,9 @@ router.post("/",authMiddleware, (req, res) => createController.handle(req, res))
  *                   observacao: null
  *                   prazo: "2026-11-30T00:00:00.000Z"
  *                   valor: 8000
+ *                   requisicaoCount: 0
+ *                   valorTotalRequisicoes: 0
+ *                   valorRestante: 8000
  *                   createdAt: "2026-04-16T09:30:00.000Z"
  *                   updatedAt: "2026-04-16T09:30:00.000Z"
  *       500:
@@ -124,6 +130,9 @@ router.get("/",authMiddleware, (req, res) => getController.handle(req, res))
  *                 observacao: "Crédito para aquisição de material de expediente"
  *                 prazo: "2026-12-31T00:00:00.000Z"
  *                 valor: 15000
+ *                 requisicaoCount: 2
+ *                 valorTotalRequisicoes: 5000
+ *                 valorRestante: 10000
  *                 createdAt: "2026-04-15T10:00:00.000Z"
  *                 updatedAt: "2026-04-15T10:00:00.000Z"
  *       404:

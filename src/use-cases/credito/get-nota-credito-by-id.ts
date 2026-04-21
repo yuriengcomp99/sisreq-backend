@@ -1,5 +1,6 @@
 import type { NotaCreditoRepository } from "../../repositories/credito/nota-credito-repository.js"
 import type { UserRepository } from "../../repositories/user/user-repository.js"
+import { notaCreditoComResumoDTO } from "../../dto/nota-credito-com-resumo-dto.js"
 
 export class GetNotaCreditoByIdUseCase {
   constructor(
@@ -19,6 +20,16 @@ export class GetNotaCreditoByIdUseCase {
       throw new Error("Nota de crédito não encontrada")
     }
 
-    return nota
+    const [usage] = await this.repository.getRequisicaoUsageByNotaCreditoIds([
+      nota.id,
+    ])
+    const stats = usage
+      ? {
+          requisicaoCount: Number(usage.requisicaoCount),
+          valorTotalRequisicoes: Number(usage.valorTotalRequisicoes),
+        }
+      : { requisicaoCount: 0, valorTotalRequisicoes: 0 }
+
+    return notaCreditoComResumoDTO(nota, stats)
   }
 }
