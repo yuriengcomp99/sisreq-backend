@@ -7,6 +7,7 @@ import { makeRegisterController } from "../factories/auth/make-register.js"
 import { makeUpdateUserController } from "../factories/auth/make-update-user-controller.js"
 import { makeDeleteUserController } from "../factories/auth/make-delete-user-controller.js"
 import { makeGetUserProfileController } from "../factories/auth/make-get-user-controller.js"
+import { makeListUsersController } from "../factories/auth/make-list-users-controller.js"
 import { makeRefreshTokenController } from "../factories/auth/make-refresh-token.js"
 import { makeLogoutController } from "../factories/auth/make-logout.js"
 
@@ -20,6 +21,7 @@ const registerController = makeRegisterController()
 const updateUserController = makeUpdateUserController()
 const deleteUserController = makeDeleteUserController()
 const getUserProfileController = makeGetUserProfileController()
+const listUsersController = makeListUsersController()
 
 /**
  * @swagger
@@ -162,6 +164,24 @@ router.post("/register", (req, res) => {
  */
 router.get("/me", authMiddleware, (req, res) => {
   return getUserProfileController.handle(req, res)
+})
+
+/**
+ * @swagger
+ * /auth/users:
+ *   get:
+ *     summary: Lista todos os usuários (apenas administrador)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de usuários (mesmo formato de dados que /auth/me por item)
+ *       403:
+ *         description: Usuário autenticado não é administrador
+ */
+router.get("/users", authMiddleware, (req, res) => {
+  return listUsersController.handle(req, res)
 })
 
 /**

@@ -60,6 +60,15 @@ export class UserRepository {
     })
   }
 
+  async findAllWithDesignation() {
+    return prisma.user.findMany({
+      include: {
+        designation: true,
+      },
+      orderBy: { createdAt: "desc" },
+    })
+  }
+
   async delete(id: string) {
     return prisma.user.delete({
       where: { id },
