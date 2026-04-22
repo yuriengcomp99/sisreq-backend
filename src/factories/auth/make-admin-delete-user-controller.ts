@@ -5,5 +5,6 @@ import { AdminDeleteUserController } from "../../controllers/auth/admin-delete-u
 export function makeAdminDeleteUserController() {
   const repository = new UserRepository()
   const useCase = new DeleteUserUseCase(repository)
-  return new AdminDeleteUserController(useCase)
+  const controller = new AdminDeleteUserController(useCase)
+  return controller
 }
