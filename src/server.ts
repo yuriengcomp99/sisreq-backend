@@ -1,4 +1,5 @@
-import { env } from "./config/env.js"
+import { env, getRabbitMqUrlLive } from "./config/env.js"
+import { startImportFinishedNotificationConsumer } from "./worker/notificacoes/import-finished-notification-worker.js"
 import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
@@ -52,4 +53,19 @@ app.get("/", (req, res) => {
 
 app.listen(8080, () => {
   console.log("Server running on http://localhost:8080")
+
+  if (getRabbitMqUrlLive()) {
+    startImportFinishedNotificationConsumer({ disconnectPrismaOnClose: false }).catch(
+      (err: unknown) => {
+        console.error(
+          "[Worker:Notificacoes] falha ao iniciar consumidor no servidor:",
+          err
+        )
+      }
+    )
+  } else {
+    console.log(
+      "[Worker:Notificacoes] RABBITMQ_URL/AMQP_URL ausente — import.finished não será consumido aqui. Defina a URL ou rode `npm run worker:notificacoes`."
+    )
+  }
 })

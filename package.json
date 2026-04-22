@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/server.ts",
+    "worker:notificacoes": "tsx src/worker/notificacoes/start.ts",
     "script:publish-import-queue-test": "tsx src/scripts/publish-import-queue-test.ts"
   },
   "keywords": [],
