@@ -1,9 +1,12 @@
 import { Router } from "express"
 import { authMiddleware } from "../middlewares/auth-middleware.js"
 import { makeGetNotificationsController } from "../factories/notificacoes/make-get-notifications-controller.js"
+import { makeMarkAllNotificationsReadController } from "../factories/notificacoes/make-mark-all-notifications-read-controller.js"
 
 const notificationsRouter = Router()
 const getNotificationsController = makeGetNotificationsController()
+const markAllNotificationsReadController =
+  makeMarkAllNotificationsReadController()
 
 /**
  * @swagger
@@ -51,6 +54,43 @@ const getNotificationsController = makeGetNotificationsController()
  */
 notificationsRouter.get("/", authMiddleware, (req, res) =>
   getNotificationsController.handle(req, res)
+)
+
+/**
+ * @swagger
+ * /notifications/read-all:
+ *   patch:
+ *     summary: Marcar todas as notificações como lidas
+ *     description: Atualiza todas as notificações não lidas do usuário autenticado para lidas.
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Operação concluída (count pode ser 0 se já estavam todas lidas)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 sucesso:
+ *                   type: boolean
+ *                 mensagem:
+ *                   type: string
+ *                 dados:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                       description: Número de notificações atualizadas
+ *       401:
+ *         description: Não autenticado
+ *       500:
+ *         description: Erro interno
+ */
+notificationsRouter.patch("/read-all", authMiddleware, (req, res) =>
+  markAllNotificationsReadController.handle(req, res)
 )
 
 export { notificationsRouter }

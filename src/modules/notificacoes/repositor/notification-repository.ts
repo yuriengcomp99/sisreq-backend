@@ -14,4 +14,11 @@ export class NotificationRepository {
       },
     })
   }
+
+  async markAllAsReadByUserId(userId: string) {
+    return prisma.notification.updateMany({
+      where: { userId, read: false },
+      data: { read: true },
+    })
+  }
 }
