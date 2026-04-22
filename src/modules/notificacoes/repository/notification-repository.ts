@@ -27,4 +27,13 @@ export class NotificationRepository {
       where: { userId, read: false },
     })
   }
+
+  async createManyForUserIds(userIds: string[], message: string) {
+    return prisma.notification.createMany({
+      data: userIds.map((userId) => ({
+        userId,
+        message,
+      })),
+    })
+  }
 }

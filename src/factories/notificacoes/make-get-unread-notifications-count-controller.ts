@@ -5,5 +5,6 @@ import { GetUnreadNotificationsCountController } from "../../modules/notificacoe
 export function makeGetUnreadNotificationsCountController() {
   const repository = new NotificationRepository()
   const useCase = new GetUnreadNotificationsCountUseCase(repository)
-  return new GetUnreadNotificationsCountController(useCase)
+  const controller = new GetUnreadNotificationsCountController(useCase)
+  return controller
 }
