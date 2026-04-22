@@ -5,7 +5,6 @@ export type CreateNotificationInput = {
   message: string
 }
 
-/** For workers/cron only — not wired to HTTP. Instantiate with `new CreateNotificationUseCase(new NotificationRepository())`. */
 export class CreateNotificationUseCase {
   constructor(private repository: NotificationRepository) {}
 

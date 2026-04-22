@@ -1,4 +1,7 @@
+import path from "node:path"
 import XLSX from "xlsx"
+import { getRabbitMqUrlLive } from "../../config/env.js"
+import { publishImportFinished } from "../../infra/queue/rabbitmq/import-finished-publisher.js"
 import { AtaRepository } from "../../repositories/ata/ata-repository.js"
 
 export class ImportAtaUseCase {
@@ -46,6 +49,26 @@ export class ImportAtaUseCase {
 
       console.log(
         `Processado: ${Math.min(i + chunkSize, rows.length)} de ${rows.length}`
+      )
+    }
+
+    if (!getRabbitMqUrlLive()) {
+      console.warn(
+        "[ImportAta] Defina RABBITMQ_URL ou AMQP_URL no .env para publicar em import.finished (importação no banco já foi concluída)."
+      )
+      return
+    }
+
+    const fileName = path.basename(filePath)
+    try {
+      await publishImportFinished({
+        fileName,
+        affectedRows: rows.length,
+      })
+    } catch (err) {
+      console.error(
+        "[ImportAta] Importação concluída, mas falha ao publicar na fila:",
+        err
       )
     }
   }
