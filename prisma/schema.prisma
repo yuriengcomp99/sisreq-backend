@@ -41,6 +41,21 @@ model User {
 
   requisicoes   Requisicao[]
   notasCredito  NotaCredito[]
+  notifications Notification[]
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  message   String   @db.Text
+  read      Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Designation {
