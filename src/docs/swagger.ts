@@ -21,6 +21,7 @@ export const swaggerSpec = swaggerJsdoc({
     { name: "Designation", description: "Gestão de setores/cargos" },
     { name: "NotaCredito", description: "Gestão de notas de crédito" },
     { name: "Notifications", description: "Notificações do usuário" },
+    { name: "Dashboard", description: "Métricas agregadas da aplicação" },
     ],
     components: {
       securitySchemes: {
