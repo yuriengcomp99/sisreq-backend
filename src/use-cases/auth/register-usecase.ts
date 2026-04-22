@@ -1,4 +1,5 @@
 import { UserRepository } from "../../repositories/user/user-repository.js"
+import { userResponseDTO } from "../../dto/user-response-dto.js"
 import bcrypt from "bcrypt"
 import { UserRole } from "@prisma/client"
 
@@ -45,8 +46,11 @@ export class RegisterUseCase {
 
     filteredData.role = filteredData.role ?? "USER"
 
-    const user = await this.userRepository.create(filteredData)
-
-    return user
+    const created = await this.userRepository.create(filteredData)
+    const full = await this.userRepository.findById(created.id)
+    if (!full) {
+      throw new Error("Falha ao carregar usuário criado")
+    }
+    return userResponseDTO(full)
   }
 }

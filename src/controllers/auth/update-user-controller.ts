@@ -16,10 +16,13 @@ export class UpdateUserController {
         return res.status(401).json(errorResponse("Não autorizado", null))
       }
 
-      const user = await this.updateUserUseCase.execute({
-        id,
-        ...req.body,
-      })
+      const body = { ...(req.body as Record<string, unknown>) }
+      delete body.role
+
+      const user = await this.updateUserUseCase.execute(
+        { id, ...body },
+        { allowRoleChange: false }
+      )
 
       return res
         .status(200)

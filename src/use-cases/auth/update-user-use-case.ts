@@ -2,11 +2,16 @@ import bcrypt from "bcrypt"
 import { UserRepository } from "../../repositories/user/user-repository.js"
 import { userResponseDTO } from "../../dto/user-response-dto.js"
 
+export type UpdateUserUseCaseOptions = {
+  allowRoleChange?: boolean
+}
+
 export class UpdateUserUseCase {
   constructor(private userRepository: UserRepository) {}
 
-  async execute(data: any) {
+  async execute(data: any, options: UpdateUserUseCaseOptions = {}) {
     const { id } = data
+    const { allowRoleChange = false } = options
 
     const user = await this.userRepository.findById(id)
 
@@ -28,10 +33,11 @@ export class UpdateUserUseCase {
       "graduation",
       "designationId",
       "email",
-      "password"
+      "password",
+      ...(allowRoleChange ? (["role"] as const) : []),
     ]
 
-    const filteredData: any = {}
+    const filteredData: Record<string, unknown> = {}
 
     for (const key of allowedFields) {
       if (data[key] !== undefined) {
@@ -39,16 +45,19 @@ export class UpdateUserUseCase {
       }
     }
 
-    if (filteredData.password) {
+    if (typeof filteredData.password === "string" && filteredData.password) {
       filteredData.password = await bcrypt.hash(filteredData.password, 10)
     }
 
-    const updatedUser = await this.userRepository.update({
+    await this.userRepository.update({
       id,
-      ...filteredData
+      ...(filteredData as Record<string, string | undefined>),
     })
 
     const userWithRelations = await this.userRepository.findById(id)
+    if (!userWithRelations) {
+      throw new Error("User not found")
+    }
 
     return userResponseDTO(userWithRelations)
   }

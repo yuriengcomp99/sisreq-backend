@@ -1,5 +1,6 @@
 import { Router } from "express"
 import { authMiddleware } from "../middlewares/auth-middleware.js"
+import { adminMiddleware } from "../middlewares/admin-middleware.js"
 
 import { makeLoginController } from "../factories/auth/make-login.js"
 import { makeRegisterController } from "../factories/auth/make-register.js"
@@ -8,6 +9,9 @@ import { makeUpdateUserController } from "../factories/auth/make-update-user-con
 import { makeDeleteUserController } from "../factories/auth/make-delete-user-controller.js"
 import { makeGetUserProfileController } from "../factories/auth/make-get-user-controller.js"
 import { makeListUsersController } from "../factories/auth/make-list-users-controller.js"
+import { makeGetUserByIdAdminController } from "../factories/auth/make-get-user-by-id-admin-controller.js"
+import { makeAdminUpdateUserController } from "../factories/auth/make-admin-update-user-controller.js"
+import { makeAdminDeleteUserController } from "../factories/auth/make-admin-delete-user-controller.js"
 import { makeRefreshTokenController } from "../factories/auth/make-refresh-token.js"
 import { makeLogoutController } from "../factories/auth/make-logout.js"
 
@@ -22,6 +26,9 @@ const updateUserController = makeUpdateUserController()
 const deleteUserController = makeDeleteUserController()
 const getUserProfileController = makeGetUserProfileController()
 const listUsersController = makeListUsersController()
+const getUserByIdAdminController = makeGetUserByIdAdminController()
+const adminUpdateUserController = makeAdminUpdateUserController()
+const adminDeleteUserController = makeAdminDeleteUserController()
 
 /**
  * @swagger
@@ -170,18 +177,137 @@ router.get("/me", authMiddleware, (req, res) => {
  * @swagger
  * /auth/users:
  *   get:
- *     summary: Lista todos os usuários (apenas administrador)
+ *     summary: Lista todos os usuários (admin)
  *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Lista de usuários (mesmo formato de dados que /auth/me por item)
+ *         description: Lista de usuários (mesmo formato que /auth/me por item)
+ *       401:
+ *         description: Não autenticado
  *       403:
- *         description: Usuário autenticado não é administrador
+ *         description: Não administrador
  */
-router.get("/users", authMiddleware, (req, res) => {
+router.get("/users", authMiddleware, adminMiddleware, (req, res) => {
   return listUsersController.handle(req, res)
+})
+
+/**
+ * @swagger
+ * /auth/users:
+ *   post:
+ *     summary: Cadastrar usuário (admin)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [first_name, army_name, graduation, designationId, email, password]
+ *             properties:
+ *               first_name: { type: string }
+ *               army_name: { type: string }
+ *               graduation: { type: string }
+ *               designationId: { type: string, format: uuid }
+ *               email: { type: string, format: email }
+ *               password: { type: string }
+ *               role: { type: string, enum: [ADMIN, USER] }
+ *     responses:
+ *       201:
+ *         description: Usuário criado
+ *       401:
+ *         description: Não autenticado
+ *       403:
+ *         description: Não administrador
+ */
+router.post("/users", authMiddleware, adminMiddleware, (req, res) => {
+  return registerController.handle(req, res)
+})
+
+/**
+ * @swagger
+ * /auth/users/{id}:
+ *   get:
+ *     summary: Buscar usuário por ID (admin)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Usuário encontrado
+ *       404:
+ *         description: Não encontrado
+ */
+router.get("/users/:id", authMiddleware, adminMiddleware, (req, res) => {
+  return getUserByIdAdminController.handle(req, res)
+})
+
+/**
+ * @swagger
+ * /auth/users/{id}:
+ *   patch:
+ *     summary: Atualizar usuário por ID (admin)
+ *     description: Igual a /auth/me, mas para qualquer usuário; permite alterar role.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               first_name: { type: string }
+ *               army_name: { type: string }
+ *               graduation: { type: string }
+ *               designationId: { type: string }
+ *               email: { type: string }
+ *               password: { type: string }
+ *               role: { type: string, enum: [ADMIN, USER] }
+ *     responses:
+ *       200:
+ *         description: Atualizado
+ */
+router.patch("/users/:id", authMiddleware, adminMiddleware, (req, res) => {
+  return adminUpdateUserController.handle(req, res)
+})
+
+/**
+ * @swagger
+ * /auth/users/{id}:
+ *   delete:
+ *     summary: Excluir usuário por ID (admin)
+ *     description: Não permite excluir o próprio usuário autenticado.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Removido
+ *       400:
+ *         description: Tentativa de excluir a si mesmo
+ */
+router.delete("/users/:id", authMiddleware, adminMiddleware, (req, res) => {
+  return adminDeleteUserController.handle(req, res)
 })
 
 /**

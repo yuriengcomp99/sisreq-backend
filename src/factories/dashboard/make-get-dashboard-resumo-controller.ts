@@ -5,5 +5,6 @@ import { GetDashboardResumoController } from "../../controllers/dashboard/get-da
 export function makeGetDashboardResumoController() {
   const repository = new DashboardRepository()
   const useCase = new GetDashboardResumoUseCase(repository)
-  return new GetDashboardResumoController(useCase)
+  const controller = new GetDashboardResumoController(useCase)
+  return controller
 }

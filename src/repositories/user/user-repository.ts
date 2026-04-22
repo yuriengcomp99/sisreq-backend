@@ -1,3 +1,4 @@
+import type { UserRole } from "@prisma/client"
 import { prisma } from "../../database/prisma.js"
 
 interface CreateUserDTO {
@@ -7,7 +8,7 @@ interface CreateUserDTO {
   designationId: string
   email: string
   password: string
-  role?: string
+  role?: UserRole
 }
 
 interface UpdateUserDTO {
@@ -18,6 +19,7 @@ interface UpdateUserDTO {
   designationId?: string
   email?: string
   password?: string
+  role?: UserRole
 }
 
 export class UserRepository {
@@ -38,6 +40,7 @@ export class UserRepository {
         designationId: data.designationId,
         email: data.email,
         password: data.password,
+        ...(data.role !== undefined ? { role: data.role } : {}),
       },
     })
   }
