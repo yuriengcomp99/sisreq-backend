@@ -1,10 +1,10 @@
 import { NotificationRepository } from "../repository/notification-repository.js"
 
-export class MarkAllNotificationsReadUseCase {
+export class GetUnreadNotificationsCountUseCase {
   constructor(private repository: NotificationRepository) {}
 
   async execute(userId: string) {
-    const { count } = await this.repository.markAllAsReadByUserId(userId)
+    const count = await this.repository.countUnreadByUserId(userId)
     return { count }
   }
 }

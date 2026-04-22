@@ -1,4 +1,4 @@
-import { NotificationRepository } from "../../modules/notificacoes/repositor/notification-repository.js"
+import { NotificationRepository } from "../../modules/notificacoes/repository/notification-repository.js"
 import { GetNotificationsUseCase } from "../../modules/notificacoes/use-case/get-notifications-use-case.js"
 import { GetNotificationsController } from "../../modules/notificacoes/controller/get-notifications-controller.js"
 

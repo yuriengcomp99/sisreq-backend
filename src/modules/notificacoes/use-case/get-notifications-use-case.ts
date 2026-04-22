@@ -1,4 +1,4 @@
-import { NotificationRepository } from "../repositor/notification-repository.js"
+import { NotificationRepository } from "../repository/notification-repository.js"
 
 export class GetNotificationsUseCase {
   constructor(private repository: NotificationRepository) {}

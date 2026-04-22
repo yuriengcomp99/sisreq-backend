@@ -21,4 +21,10 @@ export class NotificationRepository {
       data: { read: true },
     })
   }
+
+  async countUnreadByUserId(userId: string) {
+    return prisma.notification.count({
+      where: { userId, read: false },
+    })
+  }
 }

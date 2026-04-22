@@ -2,11 +2,51 @@ import { Router } from "express"
 import { authMiddleware } from "../middlewares/auth-middleware.js"
 import { makeGetNotificationsController } from "../factories/notificacoes/make-get-notifications-controller.js"
 import { makeMarkAllNotificationsReadController } from "../factories/notificacoes/make-mark-all-notifications-read-controller.js"
+import { makeGetUnreadNotificationsCountController } from "../factories/notificacoes/make-get-unread-notifications-count-controller.js"
 
 const notificationsRouter = Router()
 const getNotificationsController = makeGetNotificationsController()
 const markAllNotificationsReadController =
   makeMarkAllNotificationsReadController()
+const getUnreadNotificationsCountController =
+  makeGetUnreadNotificationsCountController()
+
+/**
+ * @swagger
+ * /notifications/unread-count:
+ *   get:
+ *     summary: Quantidade de notificações não lidas
+ *     description: Retorna o número de notificações do usuário autenticado com read = false.
+ *     tags:
+ *       - Notifications
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Contagem retornada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 sucesso:
+ *                   type: boolean
+ *                 mensagem:
+ *                   type: string
+ *                 dados:
+ *                   type: object
+ *                   properties:
+ *                     count:
+ *                       type: integer
+ *                       minimum: 0
+ *       401:
+ *         description: Não autenticado
+ *       500:
+ *         description: Erro interno
+ */
+notificationsRouter.get("/unread-count", authMiddleware, (req, res) =>
+  getUnreadNotificationsCountController.handle(req, res)
+)
 
 /**
  * @swagger
