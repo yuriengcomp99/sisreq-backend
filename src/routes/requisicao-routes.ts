@@ -56,6 +56,7 @@ ReqRouter.post("/",authMiddleware, (req, res) => {
  * /requisicoes:
  *   get:
  *     summary: Lista todas as requisições
+ *     description: Cada item inclui valorTotal (soma dos itens). Não retorna detalhes/itens — use GET /requisicoes/{id} para isso.
  *     tags: [Requisicoes]
  *     responses:
  *       200:

@@ -13,6 +13,8 @@ import { NotaCreditoRouter } from "./routes/nota-credito-routes.js"
 import { DesignationRouter } from "./routes/designation-routes.js"
 import { notificationsRouter } from "./routes/notifications-routes.js"
 import { dashboardRouter } from "./routes/dashboard-routes.js"
+import { startNotificationUnreadRabbitConsumer } from "./ws-gateway/notification-unread-rabbit-consumer.js"
+import { startWebSocketGateway } from "./ws-gateway/server.js"
 
 const app = express()
 
@@ -57,6 +59,12 @@ app.get("/", (req, res) => {
 app.listen(8080, () => {
   console.log("Server running on http://localhost:8080")
 
+  try {
+    startWebSocketGateway()
+  } catch (err: unknown) {
+    console.error("[ws-gateway] falha ao iniciar:", err)
+  }
+
   if (getRabbitMqUrlLive()) {
     startImportFinishedNotificationConsumer({ disconnectPrismaOnClose: false }).catch(
       (err: unknown) => {
@@ -66,9 +74,17 @@ app.listen(8080, () => {
         )
       }
     )
+    startNotificationUnreadRabbitConsumer({ disconnectPrismaOnClose: false }).catch(
+      (err: unknown) => {
+        console.error(
+          "[notifications.unread] falha ao iniciar consumidor no servidor:",
+          err
+        )
+      }
+    )
   } else {
     console.log(
-      "[Worker:Notificacoes] RABBITMQ_URL/AMQP_URL ausente — import.finished não será consumido aqui. Defina a URL ou rode `npm run worker:notificacoes`."
+      "[Worker:Notificacoes] RABBITMQ_URL/AMQP_URL ausente — import.finished e notifications.unread não serão consumidos aqui; unread no WS só via push local no mesmo processo."
     )
   }
 })

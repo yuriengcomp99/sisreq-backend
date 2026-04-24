@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/server.ts",
+    "dev:ws": "tsx watch src/ws-gateway/server.ts",
     "worker:notificacoes": "tsx src/worker/notificacoes/start.ts",
     "script:publish-import-queue-test": "tsx src/scripts/publish-import-queue-test.ts"
   },
@@ -27,6 +28,7 @@
     "prisma": "^6.19.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "ws": "^8.20.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -38,6 +40,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.1.0",
     "@types/node": "^25.5.0",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   }

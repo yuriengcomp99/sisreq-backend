@@ -14,12 +14,26 @@ export class RequisicaoRepository {
       }
     })
   }
+  /**
+   * Lista requisições sem carregar itens (`detalhes`); inclui `valorTotal`
+   * (soma de `valor_total` dos detalhes). GET por id continua com `detalhes` completos.
+   */
   async findAll() {
-    return prisma.requisicao.findMany({
+    const rows = await prisma.requisicao.findMany({
       orderBy: {
         createdAt: "desc",
       },
+      include: {
+        detalhes: {
+          select: { valor_total: true },
+        },
+      },
     })
+
+    return rows.map(({ detalhes, ...requisicao }) => ({
+      ...requisicao,
+      valorTotal: detalhes.reduce((acc, d) => acc + d.valor_total, 0),
+    }))
   }
   async deleteById(id: string) {
     return prisma.requisicao.delete({

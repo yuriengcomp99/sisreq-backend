@@ -1,3 +1,4 @@
+import { pushUnreadCountToUser } from "../../../ws-gateway/push-unread-count.js"
 import { NotificationRepository } from "../repository/notification-repository.js"
 
 export class MarkAllNotificationsReadUseCase {
@@ -5,6 +6,7 @@ export class MarkAllNotificationsReadUseCase {
 
   async execute(userId: string) {
     const { count } = await this.repository.markAllAsReadByUserId(userId)
+    pushUnreadCountToUser(userId, 0)
     return { count }
   }
 }
