@@ -16,6 +16,15 @@ export type RequisicaoDocumentRow = Requisicao & {
   }
 }
 
+export type DetalheFornecedor = RequisicaoDetalhe & {
+  fornecedor?: string | null
+}
+
+export type FornecedorGroup = {
+  fornecedor: string
+  itens: DetalheFornecedor[]
+}
+
 const MESES = [
   "janeiro",
   "fevereiro",
@@ -79,6 +88,25 @@ export function fonteRecursoTexto(nota: NotaCredito | null): string {
 export function fornecedorLinha(nota: NotaCredito | null): string {
   if (!nota?.emitente?.trim()) return "—"
   return nota.emitente.trim()
+}
+
+export function groupDetalhesByFornecedor(
+  detalhes: RequisicaoDetalhe[],
+  fornecedorPadrao: string
+): FornecedorGroup[] {
+  const groups = new Map<string, DetalheFornecedor[]>()
+
+  for (const item of detalhes as DetalheFornecedor[]) {
+    const nome = item.fornecedor?.trim() || fornecedorPadrao || "FORNECEDOR NÃO INFORMADO"
+    const current = groups.get(nome) ?? []
+    current.push(item)
+    groups.set(nome, current)
+  }
+
+  return Array.from(groups.entries()).map(([fornecedor, itens]) => ({
+    fornecedor,
+    itens,
+  }))
 }
 
 export function nomeAssinante(user: RequisicaoDocumentRow["user"]): string {
