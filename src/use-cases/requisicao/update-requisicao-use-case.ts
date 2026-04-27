@@ -59,11 +59,15 @@ export class UpdateRequisicaoUseCase {
               Object.entries(itemData).filter(([_, v]) => v !== undefined)
             )
 
+            const detalhe = await tx.requisicaoDetalhe.findFirst({
+              where: { id: itemId, requisicaoId: id },
+            })
+            if (!detalhe) {
+              throw new Error("REQUISICAO_DETALHE_NOT_FOUND")
+            }
+
             await tx.requisicaoDetalhe.update({
-              where: {
-                id: itemId,
-                requisicaoId: id,
-              },
+              where: { id: itemId },
               data: cleanData,
             })
           } else {

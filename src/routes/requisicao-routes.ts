@@ -4,6 +4,7 @@ import { makeGetRequisicoesController } from "../factories/requisicao/make-get-r
 import { makeDeleteRequisicaoController } from "../factories/requisicao/make-delete-requisicao.js"
 import { makeUpdateRequisicaoController } from "../factories/requisicao/make-update-requisicao.js"
 import { makeGetRequisicaoByIdController } from "../factories/requisicao/make-get-requisicao-by-id.js"
+import { makeEmitRequisicaoDocumentsController } from "../factories/requisicao/make-emit-requisicao-documents.js"
 import { authMiddleware } from "../middlewares/auth-middleware.js"
 
 const ReqRouter = Router()
@@ -13,6 +14,7 @@ const getController = makeGetRequisicoesController()
 const deleteController = makeDeleteRequisicaoController()
 const updateController = makeUpdateRequisicaoController()
 const getByIdController = makeGetRequisicaoByIdController()
+const emitDocsController = makeEmitRequisicaoDocumentsController()
 
 /**
  * @swagger
@@ -64,6 +66,84 @@ ReqRouter.post("/",authMiddleware, (req, res) => {
  */
 ReqRouter.get("/",authMiddleware, (req, res) => {
   return getController.handle(req, res)
+})
+
+/**
+ * @swagger
+ * /requisicoes/emitir/pdf/{id}:
+ *   get:
+ *     summary: Emitir requisição em PDF
+ *     description: |
+ *       Gera o PDF em memória e envia como download (`Content-Disposition: attachment`).
+ *       O arquivo **não é armazenado** no servidor.
+ *     tags: [Requisicoes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: UUID da requisição
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *           example: "550e8400-e29b-41d4-a716-446655440000"
+ *     responses:
+ *       200:
+ *         description: Corpo binário do PDF
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Requisição não encontrada
+ *       401:
+ *         description: Não autenticado
+ *       500:
+ *         description: Erro ao gerar o PDF
+ */
+ReqRouter.get("/emitir/pdf/:id", authMiddleware, (req, res) => {
+  return emitDocsController.emitPdf(req, res)
+})
+
+/**
+ * @swagger
+ * /requisicoes/emitir/word/{id}:
+ *   get:
+ *     summary: Emitir requisição em Word (DOCX)
+ *     description: |
+ *       Gera o documento Word (.docx) em memória e envia como download.
+ *       O arquivo **não é armazenado** no servidor.
+ *     tags: [Requisicoes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: UUID da requisição
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *           example: "550e8400-e29b-41d4-a716-446655440000"
+ *     responses:
+ *       200:
+ *         description: Corpo binário do DOCX
+ *         content:
+ *           application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Requisição não encontrada
+ *       401:
+ *         description: Não autenticado
+ *       500:
+ *         description: Erro ao gerar o documento
+ */
+ReqRouter.get("/emitir/word/:id", authMiddleware, (req, res) => {
+  return emitDocsController.emitWord(req, res)
 })
 
 /**

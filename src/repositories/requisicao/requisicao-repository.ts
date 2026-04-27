@@ -60,6 +60,24 @@ export class RequisicaoRepository {
     })
   }
 
+  /** Requisição com usuário e nota para emissão de PDF/Word (sem persistir arquivo). */
+  async findByIdForDocument(id: string) {
+    return prisma.requisicao.findUnique({
+      where: { id },
+      include: {
+        detalhes: { orderBy: { createdAt: "asc" } },
+        notaCredito: true,
+        user: {
+          select: {
+            first_name: true,
+            army_name: true,
+            graduation: true,
+          },
+        },
+      },
+    })
+  }
+
   /** Requisições vinculadas à nota, sem carregar itens (detalhes). */
   async findByNotaCreditoIdSemDetalhes(notaCreditoId: string) {
     return prisma.requisicao.findMany({

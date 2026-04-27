@@ -37,6 +37,12 @@ export class UpdateRequisicaoController {
           .json(errorResponse("Requisição não encontrada", error))
       }
 
+      if (error.message === "REQUISICAO_DETALHE_NOT_FOUND") {
+        return res
+          .status(404)
+          .json(errorResponse("Item da requisição não encontrado", error))
+      }
+
       return res
         .status(500)
         .json(errorResponse("Erro ao atualizar requisição", error))
