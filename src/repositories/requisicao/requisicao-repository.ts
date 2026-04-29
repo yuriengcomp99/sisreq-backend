@@ -51,13 +51,51 @@ export class RequisicaoRepository {
     })
   }
   async findById(id: string) {
-    return prisma.requisicao.findUnique({
+    const requisicao = await prisma.requisicao.findUnique({
       where: { id },
       include: {
         detalhes: true,
         notaCredito: true // 🔥 importante
       }
     })
+
+    if (!requisicao) {
+      return null
+    }
+
+    const itemNumbers = Array.from(
+      new Set(requisicao.detalhes.map((detalhe) => detalhe.nr_item))
+    )
+
+    if (itemNumbers.length === 0) {
+      return requisicao
+    }
+
+    const ataItems = await prisma.ataItem.findMany({
+      where: {
+        pregao: requisicao.nr_pregao,
+        nrItem: { in: itemNumbers },
+      },
+      select: {
+        nrItem: true,
+        fornecedor: true,
+      },
+    })
+
+    const fornecedorByNrItem = new Map<string, string>()
+    for (const item of ataItems) {
+      if (!fornecedorByNrItem.has(item.nrItem)) {
+        fornecedorByNrItem.set(item.nrItem, item.fornecedor)
+      }
+    }
+
+    return {
+      ...requisicao,
+      detalhes: requisicao.detalhes.map((detalhe) => ({
+        ...detalhe,
+        fornecedor: fornecedorByNrItem.get(detalhe.nr_item) ?? null,
+      })),
+    }
   }
 
   /** Requisição com usuário e nota para emissão de PDF/Word (sem persistir arquivo). */
