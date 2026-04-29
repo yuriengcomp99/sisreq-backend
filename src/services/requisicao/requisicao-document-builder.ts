@@ -47,8 +47,23 @@ function tipoUGLabel(tipo: string): string {
 function fonteRecursoNC(r: RequisicaoDocumentRow): string {
   if (!r.notaCredito) return "dados da NC não informados"
   const nc = r.notaCredito
+  const ncExtras = nc as typeof nc & {
+    uasg_ug_emitente?: string | null
+    pi?: string | null
+    nd?: string | null
+  }
   const prazo = new Date(nc.prazo).toLocaleDateString("pt-BR")
-  return [nc.numero, nc.emitente, nc.favorecido, prazo].filter(Boolean).join(" - ")
+  return [
+    nc.numero,
+    nc.emitente,
+    ncExtras.uasg_ug_emitente,
+    ncExtras.pi,
+    ncExtras.nd,
+    nc.favorecido,
+    prazo,
+  ]
+    .filter(Boolean)
+    .join(" - ")
 }
 
 function readModelImage(): Buffer | null {

@@ -161,6 +161,9 @@ model NotaCredito {
 
   numero      String
   emitente    String
+  uasg_ug_emitente String?
+  pi          String?
+  nd          String?
   favorecido  String   @default("BCMS")
 
   observacao  String?  @db.Text
