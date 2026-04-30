@@ -55,7 +55,7 @@ export class RequisicaoRepository {
       where: { id },
       include: {
         detalhes: true,
-        notaCredito: true // 🔥 importante
+        notaCredito: true 
       }
     })
 
@@ -100,7 +100,7 @@ export class RequisicaoRepository {
 
   /** Requisição com usuário e nota para emissão de PDF/Word (sem persistir arquivo). */
   async findByIdForDocument(id: string) {
-    return prisma.requisicao.findUnique({
+    const requisicao = await prisma.requisicao.findUnique({
       where: { id },
       include: {
         detalhes: { orderBy: { createdAt: "asc" } },
@@ -110,10 +110,44 @@ export class RequisicaoRepository {
             first_name: true,
             army_name: true,
             graduation: true,
+            designation: { select: { position: true } },
           },
         },
       },
     })
+
+    if (!requisicao) {
+      return null
+    }
+
+    const itemNumbers = Array.from(
+      new Set(requisicao.detalhes.map((d) => d.nr_item))
+    )
+    if (itemNumbers.length === 0) {
+      return requisicao
+    }
+
+    const ataItems = await prisma.ataItem.findMany({
+      where: {
+        pregao: requisicao.nr_pregao,
+        nrItem: { in: itemNumbers },
+      },
+      select: { nrItem: true, fornecedor: true },
+    })
+    const fornecedorByNrItem = new Map<string, string>()
+    for (const item of ataItems) {
+      if (!fornecedorByNrItem.has(item.nrItem)) {
+        fornecedorByNrItem.set(item.nrItem, item.fornecedor)
+      }
+    }
+
+    return {
+      ...requisicao,
+      detalhes: requisicao.detalhes.map((detalhe) => ({
+        ...detalhe,
+        fornecedor: fornecedorByNrItem.get(detalhe.nr_item) ?? null,
+      })),
+    }
   }
 
   /** Requisições vinculadas à nota, sem carregar itens (detalhes). */

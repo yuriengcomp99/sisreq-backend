@@ -6,16 +6,6 @@ import type {
   SimNao,
 } from "@prisma/client"
 
-export type RequisicaoDocumentRow = Requisicao & {
-  detalhes: RequisicaoDetalhe[]
-  notaCredito: NotaCredito | null
-  user: {
-    first_name: string
-    army_name: string
-    graduation: string
-  }
-}
-
 export type DetalheFornecedor = RequisicaoDetalhe & {
   fornecedor?: string | null
 }
@@ -23,6 +13,54 @@ export type DetalheFornecedor = RequisicaoDetalhe & {
 export type FornecedorGroup = {
   fornecedor: string
   itens: DetalheFornecedor[]
+}
+
+export type RequisicaoDocumentRow = Requisicao & {
+  detalhes: DetalheFornecedor[]
+  notaCredito: NotaCredito | null
+  user: {
+    first_name: string
+    army_name: string
+    graduation: string
+    designation: { position: string }
+  }
+}
+
+/** Primeiro nome (documentos / assinatura requisitante). */
+export function requisitanteNomeCompleto(user: RequisicaoDocumentRow["user"]): string {
+  return user.first_name?.trim() || "—"
+}
+
+/** Linha: `first_name – posto/graduação`. */
+export function requisitanteLinhaNomePosto(user: RequisicaoDocumentRow["user"]): string {
+  const fn = user.first_name?.trim() || "—"
+  const pg = user.graduation?.trim() || "—"
+  return `${fn} – ${pg}`
+}
+
+/** Posto / graduação (só o texto da graduação). */
+export function requisitantePostoGraduacao(user: RequisicaoDocumentRow["user"]): string {
+  return user.graduation?.trim() || "—"
+}
+
+/** Cargo (designation.position). */
+export function requisitanteCargo(user: RequisicaoDocumentRow["user"]): string {
+  return user.designation?.position?.trim() || "—"
+}
+
+/** Assinaturas do bloco de despacho (via env — dados sensíveis). */
+export function getDespachoAssinaturasFromEnv(): {
+  fiscalNome: string
+  fiscalCargo: string
+  odNome: string
+  odCargo: string
+} {
+  return {
+    fiscalNome: (process.env.REQUISICAO_DOC_FISCAL_NOME ?? "").trim(),
+    fiscalCargo: (process.env.REQUISICAO_DOC_FISCAL_CARGO ?? "Fiscal Administrativo").trim(),
+    odNome: (process.env.REQUISICAO_DOC_OD_NOME ?? "").trim(),
+    odCargo: (process.env.REQUISICAO_DOC_OD_CARGO ?? "OD do BCMS").trim(),
+  }
 }
 
 const MESES = [
@@ -110,9 +148,13 @@ export function groupDetalhesByFornecedor(
 }
 
 export function nomeAssinante(user: RequisicaoDocumentRow["user"]): string {
-  const n = [user.first_name, user.army_name].filter(Boolean).join(" ").trim()
-  return n || user.graduation || "—"
+  const n = requisitanteNomeCompleto(user)
+  return n !== "—" ? n : user.graduation?.trim() || "—"
 }
+
+/** Data local (linhas de despacho) — preenchimento manual. */
+export const DESPACHO_DATA_LOCAL_LINHA =
+  "Rio de Janeiro-RJ _____/_____/_____"
 
 export function safeDownloadBaseName(
   numeroDiex: string,

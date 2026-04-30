@@ -2,21 +2,33 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
+  Footer,
   ImageRun,
   Packer,
   Paragraph,
+  ShadingType,
   Table,
   TableCell,
   TableRow,
   TextRun,
   WidthType,
+  SectionType,
   VerticalAlign,
 } from "docx"
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import fs from "node:fs"
 import path from "node:path"
 import type { RequisicaoDocumentRow } from "./requisicao-document-helpers.js"
-import { contratoLabel, empenhoTipoLabel, formatDatePtBrLong, formatMoneyBr, groupDetalhesByFornecedor } from "./requisicao-document-helpers.js"
+import {
+  contratoLabel,
+  DESPACHO_DATA_LOCAL_LINHA,
+  empenhoTipoLabel,
+  formatDatePtBrLong,
+  formatMoneyBr,
+  getDespachoAssinaturasFromEnv,
+  groupDetalhesByFornecedor,
+  requisitanteCargo,
+} from "./requisicao-document-helpers.js"
 
 const MODEL_IMAGE_PATH = path.resolve(process.cwd(), "src", "assets", "requisicao-model", "image.png")
 const DOCX_FONT = "Times New Roman"
@@ -127,26 +139,33 @@ function chunk<T>(items: T[], size: number): T[][] {
 
 function buildFornecedorTable(
   fornecedor: string,
-  detalhes: RequisicaoDocumentRow["detalhes"]
+  detalhes: RequisicaoDocumentRow["detalhes"],
+  options: { showFornecedorBanner: boolean }
 ): Table {
   const totalItens = detalhes.reduce((s, d) => s + d.valor_total, 0)
 
-  const fornecedorRow = new TableRow({
-    children: [
-      new TableCell({
-        columnSpan: 7,
-        verticalAlign: VerticalAlign.CENTER,
-        margins: { top: 80, bottom: 80, left: 120, right: 120 },
-        borders: cellBorder(),
+  const fornecedorBannerRow = options.showFornecedorBanner
+    ? new TableRow({
         children: [
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [tr(fornecedor, { bold: true, size: 22 })],
+          new TableCell({
+            columnSpan: 7,
+            verticalAlign: VerticalAlign.CENTER,
+            margins: { top: 60, bottom: 60, left: 120, right: 120 },
+            borders: cellBorder(),
+            shading: {
+              type: ShadingType.CLEAR,
+              fill: "E8E8E8",
+            },
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [tr(fornecedor, { bold: true, size: 20 })],
+              }),
+            ],
           }),
         ],
-      }),
-    ],
-  })
+      })
+    : null
 
   const headerRow = new TableRow({
     children: ["ITEM", "SUBITEM", "DESCRIÇÃO", "UND", "QTDE", "VALOR UNIT", "VALOR TOTAL"].map(
@@ -260,16 +279,179 @@ function buildFornecedorTable(
     ],
   })
 
+  const rows = [
+    ...(fornecedorBannerRow ? [fornecedorBannerRow] : []),
+    headerRow,
+    ...itemRows,
+    totalRow,
+  ]
+
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [fornecedorRow, headerRow, ...itemRows, totalRow],
+    rows,
+  })
+}
+
+function despachoCellParagraphs(side: "fiscal" | "od"): Paragraph[] {
+  const assin = getDespachoAssinaturasFromEnv()
+  const fiscalNome = assin.fiscalNome || " "
+  const fiscalCargo = assin.fiscalCargo
+  const odNome = assin.odNome || " "
+  const odCargo = assin.odCargo
+
+  /** Espaço só entre a linha da data e o nome (assinatura); valor moderado em twips. */
+  const espacoAposDataAntesNome = 260
+
+  if (side === "fiscal") {
+    return [
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 120 },
+        children: [
+          tr("APROVAÇÃO DO FISCAL ADMINISTRATIVO", { bold: true, underline: {}, size: 22 }),
+        ],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.JUSTIFIED,
+        spacing: { after: 160 },
+        children: [
+          tr("Aprovo a aquisição do material solicitado, conforme descrito na requisição.", {
+            size: 22,
+          }),
+        ],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: espacoAposDataAntesNome },
+        children: [tr(DESPACHO_DATA_LOCAL_LINHA, { bold: true, size: 22 })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 80 },
+        children: [tr(fiscalNome, { bold: true, size: 22 })],
+      }),
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [tr(fiscalCargo, { bold: true, size: 22 })],
+      }),
+    ]
+  }
+
+  return [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 120 },
+      children: [
+        tr("DESPACHO DO ORDENADOR DE DESPESAS", { bold: true, underline: {}, size: 22 }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { after: 120 },
+      children: [
+        tr("1. Autorizo a aquisição do material solicitado, conforme descrito.", { size: 22 }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.JUSTIFIED,
+      spacing: { after: 160 },
+      children: [
+        tr(
+          "2. Seja enviada a requisição à SALC desta UG para as providências cabíveis.",
+          { size: 22 }
+        ),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: espacoAposDataAntesNome },
+      children: [tr(DESPACHO_DATA_LOCAL_LINHA, { bold: true, size: 22 })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 80 },
+      children: [tr(odNome, { bold: true, size: 22 })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [tr(odCargo, { bold: true, size: 22 })],
+    }),
+  ]
+}
+
+function buildDefaultFooterDocx(r: RequisicaoDocumentRow): Footer {
+  return new Footer({
+    children: [
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        children: [
+          tr("DIEx Requisitório nº ", { size: 18 }),
+          tr(r.numero_diex, { bold: true, size: 18 }),
+          tr(" – ", { size: 18 }),
+          tr(`${r.de}/BCMS - NUP: `, { size: 18 }),
+          tr(r.nup, { bold: true, size: 18 }),
+        ],
+      }),
+    ],
+  })
+}
+
+/** Após as tabelas de itens: requisitante (nome, posto/graduação, cargo). */
+function requisitanteAssinaturaParagraphs(r: RequisicaoDocumentRow): Paragraph[] {
+  const u = r.user
+  const fn = u.first_name?.trim() || "—"
+  const pg = u.graduation?.trim() || "—"
+  return [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 200, after: 100 },
+      children: [
+        tr(fn, { bold: true, size: 24 }),
+        tr(" – ", { size: 24 }),
+        tr(pg, { bold: true, size: 24 }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 120 },
+      children: [tr(requisitanteCargo(u), { bold: true, size: 24 })],
+    }),
+  ]
+}
+
+function buildDespachoTableDocx(): Table {
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            verticalAlign: VerticalAlign.BOTTOM,
+            borders: cellBorder(),
+            margins: { top: 120, bottom: 120, left: 160, right: 160 },
+            children: despachoCellParagraphs("fiscal"),
+          }),
+          new TableCell({
+            width: { size: 50, type: WidthType.PERCENTAGE },
+            verticalAlign: VerticalAlign.BOTTOM,
+            borders: cellBorder(),
+            margins: { top: 120, bottom: 120, left: 160, right: 160 },
+            children: despachoCellParagraphs("od"),
+          }),
+        ],
+      }),
+    ],
   })
 }
 
 export async function buildRequisicaoDocx(
   r: RequisicaoDocumentRow
 ): Promise<Buffer> {
-  const groups = groupDetalhesByFornecedor(r.detalhes, "dados do fornecedor aqui")
+  const groups = groupDetalhesByFornecedor(
+    r.detalhes,
+    "FORNECEDOR NÃO INFORMADO"
+  )
   const tablesContent: (Paragraph | Table)[] = []
   for (const g of groups) {
     for (const part of chunk(g.itens, 10)) {
@@ -280,101 +462,64 @@ export async function buildRequisicaoDocx(
           children: [tr("REQUISIÇÃO DE EMPENHO", { bold: true, size: 22 })],
         })
       )
-      tablesContent.push(buildFornecedorTable(g.fornecedor, part))
+      tablesContent.push(
+        buildFornecedorTable(g.fornecedor, part, {
+          showFornecedorBanner: true,
+        })
+      )
     }
   }
 
-  const despachoHeader = new Paragraph({
-    pageBreakBefore: true,
+  const despachoTitulo = new Paragraph({
     alignment: AlignmentType.CENTER,
     spacing: { before: 80, after: 200 },
     children: [tr("DESPACHO", { bold: true, underline: {}, size: 26 })],
   })
 
-  const despachoAprovacao = new Paragraph({
-    spacing: { after: 120 },
-    children: [tr("APROVAÇÃO DO FISCAL ADMINISTRATIVO", { bold: true, underline: {} })],
-  })
-
-  const despachoTexto1 = new Paragraph({
-    spacing: { after: 240 },
-    alignment: AlignmentType.JUSTIFIED,
-    children: [tr("Aprovo a aquisição do material solicitado, conforme descrito na requisição.")],
-  })
-
-  const assinaturaFiscal = new Paragraph({
-    spacing: { after: 40 },
-    alignment: AlignmentType.CENTER,
-    children: [tr("VÍTOR CESAR VELASCO FAVARO – 1º TEN", { bold: true })],
-  })
-
-  const cargoFiscal = new Paragraph({
-    spacing: { after: 180 },
-    alignment: AlignmentType.CENTER,
-    children: [tr("Fiscal Administrativo")],
-  })
-
-  const despachoODTitulo = new Paragraph({
-    spacing: { after: 120 },
-    children: [tr("DESPACHO DO ORDENADOR DE DESPESAS", { bold: true, underline: {} })],
-  })
-
-  const despachoOD1 = new Paragraph({
-    alignment: AlignmentType.JUSTIFIED,
-    children: [tr("Autorizo a aquisição do material solicitado, conforme descrito.")],
-  })
-
-  const despachoOD2 = new Paragraph({
-    spacing: { after: 220 },
-    alignment: AlignmentType.JUSTIFIED,
-    children: [
-      tr("Seja enviada a requisição à SALC desta UG para adoção das providências cabíveis."),
-    ],
-  })
-
-  const assinaturaOD = new Paragraph({
-    spacing: { after: 40 },
-    alignment: AlignmentType.CENTER,
-    children: [tr("JONATHAS DA COSTA JARDIM – TEN CEL", { bold: true })],
-  })
-
-  const cargoOD = new Paragraph({
-    alignment: AlignmentType.CENTER,
-    children: [tr("OD do BCMS")],
-  })
+  const despachoTabela = buildDespachoTableDocx()
 
   const doc = new Document({
     sections: [
       {
+        footers: {
+          default: buildDefaultFooterDocx(r),
+        },
         properties: {},
         children: [
           ...headerParagraphs(),
           new Paragraph({
             spacing: { before: 160, after: 80 },
             children: [
-              tr(`DIEx Requisitório nº ${r.numero_diex} – ${r.de}/BCMS`, { size: 24 }),
+              tr("DIEx Requisitório nº ", { size: 24 }),
+              tr(r.numero_diex, { bold: true, size: 24 }),
+              tr(" – ", { size: 24 }),
+              tr(r.de, { bold: true, size: 24 }),
+              tr("/BCMS", { size: 24 }),
             ],
           }),
           new Paragraph({
             spacing: { after: 120 },
-            children: [tr(`NUP: ${r.nup}`, { size: 24 })],
+            children: [tr("NUP: ", { size: 24 }), tr(r.nup, { bold: true, size: 24 })],
           }),
           new Paragraph({
             alignment: AlignmentType.RIGHT,
             spacing: { after: 140 },
-            children: [tr(`Rio de Janeiro-RJ, ${formatDatePtBrLong(r.data_req)}`, { size: 24 })],
+            children: [
+              tr("Rio de Janeiro-RJ, ", { size: 24 }),
+              tr(formatDatePtBrLong(r.data_req), { bold: true, size: 24 }),
+            ],
           }),
           new Paragraph({
             spacing: { after: 80 },
-            children: [tr("Do ", { bold: true, size: 24 }), tr(r.de, { size: 24 })],
+            children: [tr("Do ", { bold: true, size: 24 }), tr(r.de, { bold: true, size: 24 })],
           }),
           new Paragraph({
             spacing: { after: 60 },
-            children: [tr("Ao ", { bold: true, size: 24 }), tr(r.para, { size: 24 })],
+            children: [tr("Ao ", { bold: true, size: 24 }), tr(r.para, { bold: true, size: 24 })],
           }),
           new Paragraph({
             spacing: { after: 140 },
-            children: [tr("Assunto: ", { bold: true, size: 24 }), tr(r.assunto, { size: 24 })],
+            children: [tr("Assunto: ", { bold: true, size: 24 }), tr(r.assunto, { bold: true, size: 24 })],
           }),
           new Paragraph({
             alignment: AlignmentType.JUSTIFIED,
@@ -382,42 +527,61 @@ export async function buildRequisicaoDocx(
             children: [
               tr("1. Nos termos do contido no Art. 13 das IG 12-02, solicito autorização para aquisição de material de Expediente em geral, como UG ", { size: 24 }),
               tr(`"${tipoUGLabel(r.tipo)}"`, { bold: true, size: 24 }),
-              tr(`, do Pregão Eletrônico Nr ${r.nr_pregao} — BATALHÃO CENTRAL DE MANUTENÇÃO E SUPRIMENTO — UASG (${r.ug}). devido a necessidade de manutenção das viaturas operacionais deste batalhão de manutenção de viaturas militares.`, { size: 24 }),
+              tr(", do Pregão Eletrônico Nr ", { size: 24 }),
+              tr(r.nr_pregao, { bold: true, size: 24 }),
+              tr(" — BATALHÃO CENTRAL DE MANUTENÇÃO E SUPRIMENTO — UASG (", { size: 24 }),
+              tr(r.ug, { bold: true, size: 24 }),
+              tr("). devido a necessidade de manutenção das viaturas operacionais deste batalhão de manutenção de viaturas militares.", { size: 24 }),
             ],
           }),
           new Paragraph({
             alignment: AlignmentType.JUSTIFIED,
             spacing: { after: 120 },
-            children: [tr(`2. Fonte de recurso: ${fonteRecursoNC(r)}`, { size: 24 })],
+            children: [
+              tr("2. Fonte de recurso: ", { size: 24 }),
+              tr(fonteRecursoNC(r), { bold: true, size: 24 }),
+            ],
           }),
           new Paragraph({
             spacing: { after: 120 },
-            children: [tr(`3. Tipo de empenho: ${empenhoTipoLabel(r.empenho_tipo)}`, { size: 24 })],
+            children: [
+              tr("3. Tipo de empenho: ", { size: 24 }),
+              tr(empenhoTipoLabel(r.empenho_tipo), { bold: true, size: 24 }),
+            ],
           }),
           new Paragraph({
             spacing: { after: 120 },
-            children: [tr(`4. Contrato: ${contratoLabel(r.contrato)}`, { size: 24 })],
+            children: [
+              tr("4. Contrato: ", { size: 24 }),
+              tr(contratoLabel(r.contrato), { bold: true, size: 24 }),
+            ],
           }),
           new Paragraph({
             spacing: { after: 120 },
-            children: [tr(`5. Classe/Grupo PCA: ${r.classe_grupo_pca}`, { size: 24 })],
+            children: [
+              tr("5. Classe/Grupo PCA: ", { size: 24 }),
+              tr(r.classe_grupo_pca, { bold: true, size: 24 }),
+            ],
           }),
           new Paragraph({
             spacing: { after: 120 },
-            children: [tr(`6. Nr contratação PCA: ${r.nr_contratacao_pca}`, { size: 24 })],
+            children: [
+              tr("6. Nr contratação PCA: ", { size: 24 }),
+              tr(r.nr_contratacao_pca, { bold: true, size: 24 }),
+            ],
           }),
           ...tablesContent,
-          despachoHeader,
-          despachoAprovacao,
-          despachoTexto1,
-          assinaturaFiscal,
-          cargoFiscal,
-          despachoODTitulo,
-          despachoOD1,
-          despachoOD2,
-          assinaturaOD,
-          cargoOD,
+          ...requisitanteAssinaturaParagraphs(r),
         ],
+      },
+      {
+        footers: {
+          default: buildDefaultFooterDocx(r),
+        },
+        properties: {
+          type: SectionType.NEXT_PAGE,
+        },
+        children: [despachoTitulo, despachoTabela],
       },
     ],
   })
@@ -436,6 +600,9 @@ export async function buildRequisicaoPdf(
   const pageW = 595.28
   const pageH = 841.89
   const margin = 48
+  /** Área reservada na base para o rodapé (texto desenhado ao final em todas as páginas). */
+  const FOOTER_RESERVED = 36
+  const minContentY = margin + FOOTER_RESERVED
   let page = pdf.addPage([pageW, pageH])
   let y = pageH - margin
   const lineH = 12
@@ -443,7 +610,7 @@ export async function buildRequisicaoPdf(
   const imageData = readModelImage()
 
   function ensureSpace(lines = 1) {
-    if (y < margin + lines * lineH) {
+    if (y - lines * lineH < minContentY) {
       page = pdf.addPage([pageW, pageH])
       y = pageH - margin
     }
@@ -543,6 +710,46 @@ export async function buildRequisicaoPdf(
     }
   }
 
+  /** Linha centralizada com trechos em negrito (variáveis). */
+  function drawCenterMixed(
+    parts: readonly { text: string; bold: boolean }[],
+    size: number,
+    advanceY = lineH + 2
+  ) {
+    ensureSpace()
+    const widths = parts.map((p) =>
+      (p.bold ? fontBold : font).widthOfTextAtSize(p.text, size)
+    )
+    const totalW = widths.reduce((a, b) => a + b, 0)
+    let x = (pageW - totalW) / 2
+    for (let i = 0; i < parts.length; i++) {
+      const f = parts[i]!.bold ? fontBold : font
+      page.drawText(parts[i]!.text, {
+        x,
+        y,
+        size,
+        font: f,
+        color: rgb(0, 0, 0),
+      })
+      x += widths[i]!
+    }
+    y -= advanceY
+  }
+
+  function drawLeftMixedLine(
+    parts: readonly { text: string; bold: boolean }[],
+    size: number
+  ) {
+    ensureSpace()
+    let x = margin
+    for (const p of parts) {
+      const f = p.bold ? fontBold : font
+      page.drawText(p.text, { x, y, size, font: f, color: rgb(0, 0, 0) })
+      x += f.widthOfTextAtSize(p.text, size)
+    }
+    y -= lineH
+  }
+
   if (imageData) {
     try {
       const logo = await pdf.embedPng(imageData)
@@ -568,37 +775,121 @@ export async function buildRequisicaoPdf(
   drawCenter("(Batalhão Marechal Dutra)", 10, true)
   y -= 8
 
-  draw(`DIEx Requisitório nº ${r.numero_diex} – ${r.de}/BCMS`, 12, false)
-  draw(`NUP: ${r.nup}`, 12, false)
+  drawLeftMixedLine(
+    [
+      { text: "DIEx Requisitório nº ", bold: false },
+      { text: r.numero_diex, bold: true },
+      { text: " – ", bold: false },
+      { text: `${r.de}/BCMS`, bold: true },
+    ],
+    12
+  )
+  drawLeftMixedLine(
+    [
+      { text: "NUP: ", bold: false },
+      { text: r.nup, bold: true },
+    ],
+    12
+  )
   y -= 4
-  const rightDate = `Rio de Janeiro-RJ, ${formatDatePtBrLong(r.data_req)}`
-  const rightDateW = font.widthOfTextAtSize(rightDate, 11)
-  page.drawText(rightDate, { x: pageW - margin - rightDateW, y, size: 11, font })
-  y -= lineH + 6
+  {
+    const dateParts = [
+      { text: "Rio de Janeiro-RJ, ", bold: false },
+      { text: formatDatePtBrLong(r.data_req), bold: true },
+    ] as const
+    const dw = dateParts.map((p) =>
+      (p.bold ? fontBold : font).widthOfTextAtSize(p.text, 11)
+    )
+    const dateTotal = dw.reduce((a, b) => a + b, 0)
+    let dx = pageW - margin - dateTotal
+    ensureSpace()
+    for (let i = 0; i < dateParts.length; i++) {
+      const f = dateParts[i]!.bold ? fontBold : font
+      page.drawText(dateParts[i]!.text, { x: dx, y, size: 11, font: f })
+      dx += dw[i]!
+    }
+    y -= lineH + 6
+  }
 
-  page.drawText("Do", { x: margin, y, size: 11, font: fontBold }); page.drawText(` ${r.de}`, { x: margin + 15, y, size: 11, font }); y -= lineH
-  page.drawText("Ao", { x: margin, y, size: 11, font: fontBold }); page.drawText(` ${r.para}`, { x: margin + 15, y, size: 11, font }); y -= lineH
-  page.drawText("Assunto:", { x: margin, y, size: 11, font: fontBold }); page.drawText(` ${r.assunto}`, { x: margin + 45, y, size: 11, font }); y -= lineH + 4
+  drawLeftMixedLine(
+    [
+      { text: "Do ", bold: true },
+      { text: r.de, bold: true },
+    ],
+    11
+  )
+  drawLeftMixedLine(
+    [
+      { text: "Ao ", bold: true },
+      { text: r.para, bold: true },
+    ],
+    11
+  )
+  drawLeftMixedLine(
+    [
+      { text: "Assunto: ", bold: true },
+      { text: r.assunto, bold: true },
+    ],
+    11
+  )
+  y -= 4
 
   drawJustifiedParagraph(
     `1. Nos termos do contido no Art. 13 das IG 12-02, solicito autorização para aquisição de material de Expediente em geral, como UG "${tipoUGLabel(r.tipo)}", do Pregão Eletrônico Nr ${r.nr_pregao} — BATALHÃO CENTRAL DE MANUTENÇÃO E SUPRIMENTO — UASG (${r.ug}). devido a necessidade de manutenção das viaturas operacionais deste batalhão de manutenção de viaturas militares.`,
     11
   )
-  draw(`2. Fonte de recurso: ${fonteRecursoNC(r)}`, 11, false)
-  draw(`3. Tipo de empenho: ${empenhoTipoLabel(r.empenho_tipo)}`, 11, false)
-  draw(`4. Contrato: ${contratoLabel(r.contrato)}`, 11, false)
-  draw(`5. Classe/Grupo PCA: ${r.classe_grupo_pca}`, 11, false)
-  draw(`6. Nr contratação PCA: ${r.nr_contratacao_pca}`, 11, false)
+  drawLeftMixedLine(
+    [
+      { text: "2. Fonte de recurso: ", bold: false },
+      { text: fonteRecursoNC(r), bold: true },
+    ],
+    11
+  )
+  drawLeftMixedLine(
+    [
+      { text: "3. Tipo de empenho: ", bold: false },
+      { text: empenhoTipoLabel(r.empenho_tipo), bold: true },
+    ],
+    11
+  )
+  drawLeftMixedLine(
+    [
+      { text: "4. Contrato: ", bold: false },
+      { text: contratoLabel(r.contrato), bold: true },
+    ],
+    11
+  )
+  drawLeftMixedLine(
+    [
+      { text: "5. Classe/Grupo PCA: ", bold: false },
+      { text: r.classe_grupo_pca, bold: true },
+    ],
+    11
+  )
+  drawLeftMixedLine(
+    [
+      { text: "6. Nr contratação PCA: ", bold: false },
+      { text: r.nr_contratacao_pca, bold: true },
+    ],
+    11
+  )
   y -= 6
 
-  const groups = groupDetalhesByFornecedor(r.detalhes, "dados do fornecedor aqui")
+  const groups = groupDetalhesByFornecedor(
+    r.detalhes,
+    "FORNECEDOR NÃO INFORMADO"
+  )
   // Soma exata = maxW (pageW - 2*margin), garantindo margem igual nos dois lados.
   const colWidths = [38, 46, 188, 40, 40, 70, 77]
   const colXs = [margin]
   for (const w of colWidths) colXs.push(colXs[colXs.length - 1] + w)
   const baseRowH = 16
 
-  function drawTableGroup(fornecedor: string, itens: RequisicaoDocumentRow["detalhes"]) {
+  function drawTableGroup(
+    fornecedor: string,
+    itens: RequisicaoDocumentRow["detalhes"],
+    showFornecedorBanner: boolean
+  ) {
     const cellFont = 8
     const hPad = 3
     const vPad = 4
@@ -624,40 +915,77 @@ export async function buildRequisicaoPdf(
     })
     const total = itens.reduce((s, d) => s + d.valor_total, 0)
     const totalHeight = baseRowH
-    const tableRowsHeight = headerHeight + rows.reduce((acc, r) => acc + r.height, 0) + totalHeight
-    const neededH = tableRowsHeight + 44
-    if (y < margin + neededH) {
+    const label = fornecedor || "FORNECEDOR NÃO INFORMADO"
+    const bannerFontSize = 8
+    const bannerLines = showFornecedorBanner
+      ? wrapWithinWidth(
+          label,
+          colXs[colXs.length - 1] - colXs[0] - 8,
+          bannerFontSize,
+          true
+        )
+      : []
+    const bannerH = showFornecedorBanner
+      ? Math.max(22, bannerLines.length * 10 + 14)
+      : 0
+    const tableRowsHeight = headerHeight + rows.reduce((acc, row) => acc + row.height, 0) + totalHeight
+    const neededH = tableRowsHeight + 44 + bannerH + (showFornecedorBanner ? 8 : 0)
+    if (y - neededH < minContentY) {
       page = pdf.addPage([pageW, pageH])
       y = pageH - margin
     }
 
-    draw(`FORNECEDOR: ${fornecedor || "dados do fornecedor aqui"}`, 10, true)
-    y -= 6
+    let tableTop = y
+    if (showFornecedorBanner) {
+      const bannerTop = tableTop
+      const bannerBottom = tableTop - bannerH
+      page.drawRectangle({
+        x: colXs[0],
+        y: bannerBottom,
+        width: colXs[colXs.length - 1] - colXs[0],
+        height: bannerTop - bannerBottom,
+        color: rgb(0.91, 0.91, 0.91),
+        borderColor: rgb(0, 0, 0),
+        borderWidth: 0.5,
+      })
+      let by = bannerTop - 10
+      for (const ln of bannerLines) {
+        const lw = fontBold.widthOfTextAtSize(ln, bannerFontSize)
+        page.drawText(ln, {
+          x: (pageW - lw) / 2,
+          y: by,
+          size: bannerFontSize,
+          font: fontBold,
+          color: rgb(0, 0, 0),
+        })
+        by -= 10
+      }
+      tableTop = bannerBottom - 8
+    }
 
-    const top = y
-    let currentY = top
+    let currentY = tableTop
     const totalH = tableRowsHeight
 
     // Bordas verticais: externas em toda altura; internas só até antes da linha de total (célula mesclada à esquerda).
     page.drawLine({
-      start: { x: colXs[0], y: top },
-      end: { x: colXs[0], y: top - totalH },
+      start: { x: colXs[0], y: tableTop },
+      end: { x: colXs[0], y: tableTop - totalH },
       thickness: 1,
       color: rgb(0, 0, 0),
     })
     page.drawLine({
-      start: { x: colXs[colXs.length - 1], y: top },
-      end: { x: colXs[colXs.length - 1], y: top - totalH },
+      start: { x: colXs[colXs.length - 1], y: tableTop },
+      end: { x: colXs[colXs.length - 1], y: tableTop - totalH },
       thickness: 1,
       color: rgb(0, 0, 0),
     })
-    const totalTopY = top - (headerHeight + rows.reduce((acc, r) => acc + r.height, 0))
+    const totalTopY = tableTop - (headerHeight + rows.reduce((acc, row) => acc + row.height, 0))
     for (let i = 1; i < colXs.length - 1; i++) {
       const x = colXs[i]
       const isSplitBeforeLastCol = i === colXs.length - 2 // separa coluna do valor total
       page.drawLine({
-        start: { x, y: top },
-        end: { x, y: isSplitBeforeLastCol ? top - totalH : totalTopY },
+        start: { x, y: tableTop },
+        end: { x, y: isSplitBeforeLastCol ? tableTop - totalH : totalTopY },
         thickness: 1,
         color: rgb(0, 0, 0),
       })
@@ -677,10 +1005,10 @@ export async function buildRequisicaoPdf(
       const hSize = fitNoWrap(h, colWidths[i] - hPad * 2, 8)
       const hWidth = fontBold.widthOfTextAtSize(h, hSize)
       const hx = colXs[i] + (colWidths[i] - hWidth) / 2
-      page.drawText(h, { x: hx, y: top - headerHeight + 5, size: hSize, font: fontBold })
+      page.drawText(h, { x: hx, y: tableTop - headerHeight + 5, size: hSize, font: fontBold })
     })
 
-    let rowTop = top - headerHeight
+    let rowTop = tableTop - headerHeight
     rows.forEach((rw) => {
       const yBase = rowTop - vPad - 8
       const drawCellLines = (lines: string[], colIdx: number, align: "left" | "center" | "right" = "left", fixedSize = cellFont) => {
@@ -724,31 +1052,259 @@ export async function buildRequisicaoPdf(
       font: fontBold,
     })
 
-    y = top - totalH - 14
+    y = tableTop - totalH - 14
   }
 
   for (const g of groups) {
     for (const part of chunk(g.itens, 12)) {
-      drawTableGroup(g.fornecedor, part)
+      drawTableGroup(g.fornecedor, part, true)
     }
   }
 
+  y -= 20
+  const uPdf = r.user
+  drawCenterMixed(
+    [
+      { text: uPdf.first_name?.trim() || "—", bold: true },
+      { text: " – ", bold: false },
+      { text: uPdf.graduation?.trim() || "—", bold: true },
+    ],
+    11
+  )
+  drawCenter(requisitanteCargo(r.user), 11, true)
+  y -= 28
+
   page = pdf.addPage([pageW, pageH])
   y = pageH - margin
+
+  const assinPdf = getDespachoAssinaturasFromEnv()
+  const colGap = 10
+  const innerColW = (maxW - colGap) / 2
+  const leftColX = margin
+  const rightColX = margin + innerColW + colGap
+  const midX = margin + innerColW + colGap / 2
+  /** Pequeno respiro entre o fim do texto e o bloco data/nome (assinatura fica entre data e nome). */
+  const PDF_PAD_TEXTO_DATA = 22
+  const PDF_GAP_DATA_NOME = 10
+
+  type PdfLine = { text: string; size: number; bold?: boolean; center?: boolean; justify?: boolean }
+
+  const leftTopBlocks: PdfLine[] = [
+    { text: "APROVAÇÃO DO FISCAL ADMINISTRATIVO", size: 9, bold: true, center: true },
+    {
+      text: "Aprovo a aquisição do material solicitado, conforme descrito na requisição.",
+      size: 9,
+      justify: true,
+    },
+  ]
+  const rightTopBlocks: PdfLine[] = [
+    { text: "DESPACHO DO ORDENADOR DE DESPESAS", size: 9, bold: true, center: true },
+    {
+      text: "1. Autorizo a aquisição do material solicitado, conforme descrito.",
+      size: 9,
+      justify: true,
+    },
+    {
+      text: "2. Seja enviada a requisição à SALC desta UG para as providências cabíveis.",
+      size: 9,
+      justify: true,
+    },
+  ]
+
+  function heightOfPdfTopBlocks(blocks: PdfLine[], innerW: number): number {
+    let h = 0
+    for (const b of blocks) {
+      const lines = b.justify
+        ? wrapWithinWidth(b.text, innerW - 6, b.size, false)
+        : b.center
+          ? wrapWithinWidth(b.text, innerW - 6, b.size, !!b.bold)
+          : wrapLine(b.text, b.size, !!b.bold)
+      h += Math.max(1, lines.length) * (b.size + 3)
+      h += 4
+    }
+    return h + 8
+  }
+
+  function heightPdfBottomStack(dateStr: string, nome: string, cargo: string, innerW: number): number {
+    const cw = innerW - 6
+    const dateLines = wrapWithinWidth(dateStr, cw, 9, true).length
+    const nomeLines = wrapWithinWidth(nome || " ", cw, 9, true).length
+    return dateLines * 12 + PDF_GAP_DATA_NOME + nomeLines * 12 + 12 + 14
+  }
+
+  const hLeftBottom = heightPdfBottomStack(
+    DESPACHO_DATA_LOCAL_LINHA,
+    assinPdf.fiscalNome || " ",
+    assinPdf.fiscalCargo,
+    innerColW
+  )
+  const hRightBottom = heightPdfBottomStack(
+    DESPACHO_DATA_LOCAL_LINHA,
+    assinPdf.odNome || " ",
+    assinPdf.odCargo,
+    innerColW
+  )
+  const hLeftTop = heightOfPdfTopBlocks(leftTopBlocks, innerColW)
+  const hRightTop = heightOfPdfTopBlocks(rightTopBlocks, innerColW)
+  const rowH = Math.max(
+    hLeftTop + PDF_PAD_TEXTO_DATA + hLeftBottom,
+    hRightTop + PDF_PAD_TEXTO_DATA + hRightBottom,
+    200
+  )
+
   drawCenter("DESPACHO", 12, true)
-  y -= 8
-  draw("APROVAÇÃO DO FISCAL ADMINISTRATIVO", 10, true)
-  draw("Aprovo a aquisição do material solicitado, conforme descrito na requisição.", 10, false)
-  y -= 8
-  draw("VÍTOR CESAR VELASCO FAVARO – 1º TEN", 10, true)
-  draw("Fiscal Administrativo", 10, false)
-  y -= 12
-  draw("DESPACHO DO ORDENADOR DE DESPESAS", 10, true)
-  draw("Autorizo a aquisição do material solicitado, conforme descrito.", 10, false)
-  draw("Seja enviada a requisição à SALC desta UG para as providências cabíveis.", 10, false)
-  y -= 8
-  draw("JONATHAS DA COSTA JARDIM – TEN CEL", 10, true)
-  draw("OD do BCMS", 10, false)
+  y -= 10
+  const rowTopFinal = y
+
+  page.drawRectangle({
+    x: margin,
+    y: rowTopFinal - rowH,
+    width: maxW,
+    height: rowH,
+    borderColor: rgb(0, 0, 0),
+    borderWidth: 1,
+    color: rgb(1, 1, 1),
+  })
+  page.drawLine({
+    start: { x: midX, y: rowTopFinal },
+    end: { x: midX, y: rowTopFinal - rowH },
+    thickness: 1,
+    color: rgb(0, 0, 0),
+  })
+
+  const innerBottomY = rowTopFinal - rowH + 18
+
+  function drawPdfTopColumn(x0: number, blocks: PdfLine[], yMin: number) {
+    let yy = rowTopFinal - 12
+    for (const b of blocks) {
+      const f = b.bold ? fontBold : font
+      if (b.justify) {
+        const lines = wrapWithinWidth(b.text, innerColW - 6, b.size, false)
+        for (let li = 0; li < lines.length; li++) {
+          if (yy < yMin) return
+          const ln = lines[li]
+          const isLast = li === lines.length - 1
+          if (isLast || !ln.includes(" ")) {
+            page.drawText(ln, { x: x0 + 3, y: yy, size: b.size, font })
+          } else {
+            const words = ln.split(" ")
+            const wordsWidth = words.reduce((acc, w) => acc + font.widthOfTextAtSize(w, b.size), 0)
+            const slots = words.length - 1
+            const spacing = slots > 0 ? (innerColW - 6 - wordsWidth) / slots : 0
+            let xx = x0 + 3
+            for (const [idx, w] of words.entries()) {
+              page.drawText(w, { x: xx, y: yy, size: b.size, font })
+              xx += font.widthOfTextAtSize(w, b.size)
+              if (idx < slots) xx += spacing
+            }
+          }
+          yy -= b.size + 3
+        }
+      } else if (b.center) {
+        for (const ln of wrapWithinWidth(b.text, innerColW - 6, b.size, !!b.bold)) {
+          if (yy < yMin) return
+          const w = f.widthOfTextAtSize(ln, b.size)
+          page.drawText(ln, {
+            x: x0 + (innerColW - w) / 2,
+            y: yy,
+            size: b.size,
+            font: f,
+          })
+          yy -= b.size + 3
+        }
+      }
+      yy -= 4
+    }
+  }
+
+  function drawPdfBottomColumn(
+    x0: number,
+    yBase: number,
+    dateStr: string,
+    nomeStr: string,
+    cargoStr: string
+  ) {
+    const cw = innerColW - 6
+    let yLine = yBase + 8
+    const cwCargo = fontBold.widthOfTextAtSize(cargoStr, 9)
+    page.drawText(cargoStr, {
+      x: x0 + (innerColW - cwCargo) / 2,
+      y: yLine,
+      size: 9,
+      font: fontBold,
+    })
+    yLine += 11
+    for (const ln of wrapWithinWidth(nomeStr || " ", cw, 9, true)) {
+      const w = fontBold.widthOfTextAtSize(ln, 9)
+      page.drawText(ln, {
+        x: x0 + (innerColW - w) / 2,
+        y: yLine,
+        size: 9,
+        font: fontBold,
+      })
+      yLine += 11
+    }
+    yLine += PDF_GAP_DATA_NOME
+    for (const ln of wrapWithinWidth(dateStr, cw, 9, true)) {
+      const w = fontBold.widthOfTextAtSize(ln, 9)
+      page.drawText(ln, {
+        x: x0 + (innerColW - w) / 2,
+        y: yLine,
+        size: 9,
+        font: fontBold,
+      })
+      yLine += 12
+    }
+  }
+
+  const yFloorLeft = innerBottomY + hLeftBottom + PDF_PAD_TEXTO_DATA
+  const yFloorRight = innerBottomY + hRightBottom + PDF_PAD_TEXTO_DATA
+  drawPdfTopColumn(leftColX, leftTopBlocks, yFloorLeft)
+  drawPdfTopColumn(rightColX, rightTopBlocks, yFloorRight)
+  drawPdfBottomColumn(
+    leftColX,
+    innerBottomY,
+    DESPACHO_DATA_LOCAL_LINHA,
+    assinPdf.fiscalNome || " ",
+    assinPdf.fiscalCargo
+  )
+  drawPdfBottomColumn(
+    rightColX,
+    innerBottomY,
+    DESPACHO_DATA_LOCAL_LINHA,
+    assinPdf.odNome || " ",
+    assinPdf.odCargo
+  )
+
+  y = rowTopFinal - rowH - 20
+
+  const footerSize = 7
+  const footerParts = [
+    { text: "DIEx Requisitório nº ", bold: false },
+    { text: r.numero_diex, bold: true },
+    { text: " – ", bold: false },
+    { text: `${r.de}/BCMS - NUP: `, bold: false },
+    { text: r.nup, bold: true },
+  ] as const
+  for (const pdfPage of pdf.getPages()) {
+    const { width } = pdfPage.getSize()
+    const fw = footerParts.map((p) =>
+      (p.bold ? fontBold : font).widthOfTextAtSize(p.text, footerSize)
+    )
+    const total = fw.reduce((a, b) => a + b, 0)
+    let fx = (width - total) / 2
+    for (let i = 0; i < footerParts.length; i++) {
+      const f = footerParts[i]!.bold ? fontBold : font
+      pdfPage.drawText(footerParts[i]!.text, {
+        x: fx,
+        y: margin,
+        size: footerSize,
+        font: f,
+        color: rgb(0, 0, 0),
+      })
+      fx += fw[i]!
+    }
+  }
 
   const bytes = await pdf.save()
   return Buffer.from(bytes)
