@@ -64,7 +64,6 @@ function fonteRecursoNC(r: RequisicaoDocumentRow): string {
     pi?: string | null
     nd?: string | null
   }
-  const prazo = new Date(nc.prazo).toLocaleDateString("pt-BR")
   return [
     nc.numero,
     nc.emitente,
@@ -72,7 +71,6 @@ function fonteRecursoNC(r: RequisicaoDocumentRow): string {
     ncExtras.pi,
     ncExtras.nd,
     nc.favorecido,
-    prazo,
   ]
     .filter(Boolean)
     .join(" - ")
@@ -299,8 +297,10 @@ function despachoCellParagraphs(side: "fiscal" | "od"): Paragraph[] {
   const odNome = assin.odNome || " "
   const odCargo = assin.odCargo
 
-  /** Espaço só entre a linha da data e o nome (assinatura); valor moderado em twips. */
-  const espacoAposDataAntesNome = 260
+  /** Espaço só entre a linha da data e o nome (assinatura), em twips. */
+  const espacoAposDataAntesNome = 560
+  /** Pouco espaço entre o texto do despacho e a linha da data. */
+  const espacoAposTextoAntesData = 16
 
   if (side === "fiscal") {
     return [
@@ -313,7 +313,7 @@ function despachoCellParagraphs(side: "fiscal" | "od"): Paragraph[] {
       }),
       new Paragraph({
         alignment: AlignmentType.JUSTIFIED,
-        spacing: { after: 160 },
+        spacing: { after: espacoAposTextoAntesData },
         children: [
           tr("Aprovo a aquisição do material solicitado, conforme descrito na requisição.", {
             size: 22,
@@ -323,7 +323,7 @@ function despachoCellParagraphs(side: "fiscal" | "od"): Paragraph[] {
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { after: espacoAposDataAntesNome },
-        children: [tr(DESPACHO_DATA_LOCAL_LINHA, { bold: true, size: 22 })],
+        children: [tr(DESPACHO_DATA_LOCAL_LINHA, { size: 22 })],
       }),
       new Paragraph({
         alignment: AlignmentType.CENTER,
@@ -354,7 +354,7 @@ function despachoCellParagraphs(side: "fiscal" | "od"): Paragraph[] {
     }),
     new Paragraph({
       alignment: AlignmentType.JUSTIFIED,
-      spacing: { after: 160 },
+      spacing: { after: espacoAposTextoAntesData },
       children: [
         tr(
           "2. Seja enviada a requisição à SALC desta UG para as providências cabíveis.",
@@ -365,7 +365,7 @@ function despachoCellParagraphs(side: "fiscal" | "od"): Paragraph[] {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: espacoAposDataAntesNome },
-      children: [tr(DESPACHO_DATA_LOCAL_LINHA, { bold: true, size: 22 })],
+      children: [tr(DESPACHO_DATA_LOCAL_LINHA, { size: 22 })],
     }),
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -386,10 +386,10 @@ function buildDefaultFooterDocx(r: RequisicaoDocumentRow): Footer {
         alignment: AlignmentType.CENTER,
         children: [
           tr("DIEx Requisitório nº ", { size: 18 }),
-          tr(r.numero_diex, { bold: true, size: 18 }),
+          tr(r.numero_diex, { size: 18 }),
           tr(" – ", { size: 18 }),
           tr(`${r.de}/BCMS - NUP: `, { size: 18 }),
-          tr(r.nup, { bold: true, size: 18 }),
+          tr(r.nup, { size: 18 }),
         ],
       }),
     ],
@@ -491,22 +491,22 @@ export async function buildRequisicaoDocx(
             spacing: { before: 160, after: 80 },
             children: [
               tr("DIEx Requisitório nº ", { size: 24 }),
-              tr(r.numero_diex, { bold: true, size: 24 }),
+              tr(r.numero_diex, { size: 24 }),
               tr(" – ", { size: 24 }),
-              tr(r.de, { bold: true, size: 24 }),
+              tr(r.de, { size: 24 }),
               tr("/BCMS", { size: 24 }),
             ],
           }),
           new Paragraph({
             spacing: { after: 120 },
-            children: [tr("NUP: ", { size: 24 }), tr(r.nup, { bold: true, size: 24 })],
+            children: [tr("NUP: ", { size: 24 }), tr(r.nup, { size: 24 })],
           }),
           new Paragraph({
             alignment: AlignmentType.RIGHT,
             spacing: { after: 140 },
             children: [
               tr("Rio de Janeiro-RJ, ", { size: 24 }),
-              tr(formatDatePtBrLong(r.data_req), { bold: true, size: 24 }),
+              tr(formatDatePtBrLong(r.data_req), { size: 24 }),
             ],
           }),
           new Paragraph({
@@ -525,7 +525,7 @@ export async function buildRequisicaoDocx(
             alignment: AlignmentType.JUSTIFIED,
             spacing: { after: 120 },
             children: [
-              tr("1. Nos termos do contido no Art. 13 das IG 12-02, solicito autorização para aquisição de material de Expediente em geral, como UG ", { size: 24 }),
+              tr("1. Nos termos do contido no Art. 13 das IG 12-02, solicito autorização para aquisição/contratação de material/serviço descrito na tabela, como UG ", { size: 24 }),
               tr(`"${tipoUGLabel(r.tipo)}"`, { bold: true, size: 24 }),
               tr(", do Pregão Eletrônico Nr ", { size: 24 }),
               tr(r.nr_pregao, { bold: true, size: 24 }),
@@ -778,16 +778,16 @@ export async function buildRequisicaoPdf(
   drawLeftMixedLine(
     [
       { text: "DIEx Requisitório nº ", bold: false },
-      { text: r.numero_diex, bold: true },
+      { text: r.numero_diex, bold: false },
       { text: " – ", bold: false },
-      { text: `${r.de}/BCMS`, bold: true },
+      { text: `${r.de}/BCMS`, bold: false },
     ],
     12
   )
   drawLeftMixedLine(
     [
       { text: "NUP: ", bold: false },
-      { text: r.nup, bold: true },
+      { text: r.nup, bold: false },
     ],
     12
   )
@@ -795,7 +795,7 @@ export async function buildRequisicaoPdf(
   {
     const dateParts = [
       { text: "Rio de Janeiro-RJ, ", bold: false },
-      { text: formatDatePtBrLong(r.data_req), bold: true },
+      { text: formatDatePtBrLong(r.data_req), bold: false },
     ] as const
     const dw = dateParts.map((p) =>
       (p.bold ? fontBold : font).widthOfTextAtSize(p.text, 11)
@@ -835,7 +835,7 @@ export async function buildRequisicaoPdf(
   y -= 4
 
   drawJustifiedParagraph(
-    `1. Nos termos do contido no Art. 13 das IG 12-02, solicito autorização para aquisição de material de Expediente em geral, como UG "${tipoUGLabel(r.tipo)}", do Pregão Eletrônico Nr ${r.nr_pregao} — BATALHÃO CENTRAL DE MANUTENÇÃO E SUPRIMENTO — UASG (${r.ug}). devido a necessidade de manutenção das viaturas operacionais deste batalhão de manutenção de viaturas militares.`,
+    `1. Nos termos do contido no Art. 13 das IG 12-02, solicito autorização para aquisição/contratação de material/serviço descrito na tabela, como UG "${tipoUGLabel(r.tipo)}", do Pregão Eletrônico Nr ${r.nr_pregao} — BATALHÃO CENTRAL DE MANUTENÇÃO E SUPRIMENTO — UASG (${r.ug}). devido a necessidade de manutenção das viaturas operacionais deste batalhão de manutenção de viaturas militares.`,
     11
   )
   drawLeftMixedLine(
@@ -1083,9 +1083,10 @@ export async function buildRequisicaoPdf(
   const leftColX = margin
   const rightColX = margin + innerColW + colGap
   const midX = margin + innerColW + colGap / 2
-  /** Pequeno respiro entre o fim do texto e o bloco data/nome (assinatura fica entre data e nome). */
-  const PDF_PAD_TEXTO_DATA = 22
-  const PDF_GAP_DATA_NOME = 10
+  /** Respiro entre o fim do texto do despacho e a linha da data (mínimo). */
+  const PDF_PAD_TEXTO_DATA = 0
+  /** Espaço entre a linha da data (____/____/_____) e o nome, fiscal e OD. */
+  const PDF_GAP_DATA_NOME = 42
 
   type PdfLine = { text: string; size: number; bold?: boolean; center?: boolean; justify?: boolean }
 
@@ -1127,7 +1128,7 @@ export async function buildRequisicaoPdf(
 
   function heightPdfBottomStack(dateStr: string, nome: string, cargo: string, innerW: number): number {
     const cw = innerW - 6
-    const dateLines = wrapWithinWidth(dateStr, cw, 9, true).length
+    const dateLines = wrapWithinWidth(dateStr, cw, 9, false).length
     const nomeLines = wrapWithinWidth(nome || " ", cw, 9, true).length
     return dateLines * 12 + PDF_GAP_DATA_NOME + nomeLines * 12 + 12 + 14
   }
@@ -1245,13 +1246,13 @@ export async function buildRequisicaoPdf(
       yLine += 11
     }
     yLine += PDF_GAP_DATA_NOME
-    for (const ln of wrapWithinWidth(dateStr, cw, 9, true)) {
-      const w = fontBold.widthOfTextAtSize(ln, 9)
+    for (const ln of wrapWithinWidth(dateStr, cw, 9, false)) {
+      const w = font.widthOfTextAtSize(ln, 9)
       page.drawText(ln, {
         x: x0 + (innerColW - w) / 2,
         y: yLine,
         size: 9,
-        font: fontBold,
+        font,
       })
       yLine += 12
     }
@@ -1281,10 +1282,10 @@ export async function buildRequisicaoPdf(
   const footerSize = 7
   const footerParts = [
     { text: "DIEx Requisitório nº ", bold: false },
-    { text: r.numero_diex, bold: true },
+    { text: r.numero_diex, bold: false },
     { text: " – ", bold: false },
     { text: `${r.de}/BCMS - NUP: `, bold: false },
-    { text: r.nup, bold: true },
+    { text: r.nup, bold: false },
   ] as const
   for (const pdfPage of pdf.getPages()) {
     const { width } = pdfPage.getSize()

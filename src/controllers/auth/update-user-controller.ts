@@ -18,6 +18,7 @@ export class UpdateUserController {
 
       const body = { ...(req.body as Record<string, unknown>) }
       delete body.role
+      delete body.designationId
 
       const user = await this.updateUserUseCase.execute(
         { id, ...body },
