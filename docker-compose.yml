@@ -1,0 +1,87 @@
+# Stack local: PostgreSQL + RabbitMQ + API (HTTP) + serviço WebSocket dedicado.
+# Um comando sobe tudo: docker compose up --build
+#
+# URLs internas (entre containers): host `postgres`, `rabbitmq`.
+# Do host: API http://localhost:8080, WS ws://localhost:8081
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sisreq
+      POSTGRES_PASSWORD: sisreq
+      POSTGRES_DB: sisreq
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sisreq -d sisreq"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  api:
+    build: .
+    env_file:
+      - .env
+    command: >
+      sh -c "npx prisma migrate deploy && npm run start"
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8080/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://sisreq:sisreq@postgres:5432/sisreq?schema=public
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      SEPARATE_WS_SERVICE: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  ws:
+    build: .
+    env_file:
+      - .env
+    command: ["npm", "run", "start:ws-service"]
+    ports:
+      - "8081:8081"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://sisreq:sisreq@postgres:5432/sisreq?schema=public
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      WS_PORT: "8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

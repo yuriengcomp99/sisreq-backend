@@ -1,4 +1,9 @@
 import { env, getRabbitMqUrlLive } from "./config/env.js"
+
+const separateWsService = (() => {
+  const v = (process.env.SEPARATE_WS_SERVICE ?? "").trim().toLowerCase()
+  return v === "1" || v === "true" || v === "yes"
+})()
 import { startImportFinishedNotificationConsumer } from "./worker/notificacoes/import-finished-notification-worker.js"
 import express from "express"
 import cors from "cors"
@@ -59,10 +64,16 @@ app.get("/", (req, res) => {
 app.listen(8080, () => {
   console.log("Server running on http://localhost:8080")
 
-  try {
-    startWebSocketGateway()
-  } catch (err: unknown) {
-    console.error("[ws-gateway] falha ao iniciar:", err)
+  if (!separateWsService) {
+    try {
+      startWebSocketGateway()
+    } catch (err: unknown) {
+      console.error("[ws-gateway] falha ao iniciar:", err)
+    }
+  } else {
+    console.log(
+      "[ws-gateway] SEPARATE_WS_SERVICE ativo — gateway WS e consumidor notifications.unread rodam em outro processo."
+    )
   }
 
   if (getRabbitMqUrlLive()) {
@@ -74,14 +85,16 @@ app.listen(8080, () => {
         )
       }
     )
-    startNotificationUnreadRabbitConsumer({ disconnectPrismaOnClose: false }).catch(
-      (err: unknown) => {
-        console.error(
-          "[notifications.unread] falha ao iniciar consumidor no servidor:",
-          err
-        )
-      }
-    )
+    if (!separateWsService) {
+      startNotificationUnreadRabbitConsumer({ disconnectPrismaOnClose: false }).catch(
+        (err: unknown) => {
+          console.error(
+            "[notifications.unread] falha ao iniciar consumidor no servidor:",
+            err
+          )
+        }
+      )
+    }
   } else {
     console.log(
       "[Worker:Notificacoes] RABBITMQ_URL/AMQP_URL ausente — import.finished e notifications.unread não serão consumidos aqui; unread no WS só via push local no mesmo processo."
