@@ -46,7 +46,6 @@ type RetryOptions = {
   label?: string
 }
 
-/** Retries for consumer startup (e.g. before Docker healthchecks complete on cold boot). */
 export async function createRabbitConnectionWithRetry(options: RetryOptions = {}) {
   const maxAttempts = options.maxAttempts ?? 12
   const delayMs = options.delayMs ?? 1000

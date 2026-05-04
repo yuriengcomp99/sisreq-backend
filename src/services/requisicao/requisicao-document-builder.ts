@@ -297,9 +297,7 @@ function despachoCellParagraphs(side: "fiscal" | "od"): Paragraph[] {
   const odNome = assin.odNome || " "
   const odCargo = assin.odCargo
 
-  /** Espaço só entre a linha da data e o nome (assinatura), em twips. */
   const espacoAposDataAntesNome = 560
-  /** Pouco espaço entre o texto do despacho e a linha da data. */
   const espacoAposTextoAntesData = 16
 
   if (side === "fiscal") {
@@ -396,7 +394,6 @@ function buildDefaultFooterDocx(r: RequisicaoDocumentRow): Footer {
   })
 }
 
-/** Após as tabelas de itens: requisitante (nome, posto/graduação, cargo). */
 function requisitanteAssinaturaParagraphs(r: RequisicaoDocumentRow): Paragraph[] {
   const u = r.user
   const fn = u.first_name?.trim() || "—"
@@ -589,7 +586,6 @@ export async function buildRequisicaoDocx(
   return Buffer.from(await Packer.toBuffer(doc))
 }
 
-/** PDF compacto com os mesmos dados (layout simplificado; refinável). */
 export async function buildRequisicaoPdf(
   r: RequisicaoDocumentRow
 ): Promise<Buffer> {
@@ -600,7 +596,6 @@ export async function buildRequisicaoPdf(
   const pageW = 595.28
   const pageH = 841.89
   const margin = 48
-  /** Área reservada na base para o rodapé (texto desenhado ao final em todas as páginas). */
   const FOOTER_RESERVED = 36
   const minContentY = margin + FOOTER_RESERVED
   let page = pdf.addPage([pageW, pageH])
@@ -710,7 +705,6 @@ export async function buildRequisicaoPdf(
     }
   }
 
-  /** Linha centralizada com trechos em negrito (variáveis). */
   function drawCenterMixed(
     parts: readonly { text: string; bold: boolean }[],
     size: number,
@@ -763,9 +757,7 @@ export async function buildRequisicaoPdf(
         height: targetH,
       })
       y -= targetH + 10
-    } catch {
-      // imagem inválida: segue sem logo
-    }
+    } catch {}
   }
 
   drawCenter("MINISTÉRIO DA DEFESA", 11, true)
@@ -879,7 +871,6 @@ export async function buildRequisicaoPdf(
     r.detalhes,
     "FORNECEDOR NÃO INFORMADO"
   )
-  // Soma exata = maxW (pageW - 2*margin), garantindo margem igual nos dois lados.
   const colWidths = [38, 46, 188, 40, 40, 70, 77]
   const colXs = [margin]
   for (const w of colWidths) colXs.push(colXs[colXs.length - 1] + w)
@@ -966,7 +957,6 @@ export async function buildRequisicaoPdf(
     let currentY = tableTop
     const totalH = tableRowsHeight
 
-    // Bordas verticais: externas em toda altura; internas só até antes da linha de total (célula mesclada à esquerda).
     page.drawLine({
       start: { x: colXs[0], y: tableTop },
       end: { x: colXs[0], y: tableTop - totalH },
@@ -1083,9 +1073,7 @@ export async function buildRequisicaoPdf(
   const leftColX = margin
   const rightColX = margin + innerColW + colGap
   const midX = margin + innerColW + colGap / 2
-  /** Respiro entre o fim do texto do despacho e a linha da data (mínimo). */
   const PDF_PAD_TEXTO_DATA = 0
-  /** Espaço entre a linha da data (____/____/_____) e o nome, fiscal e OD. */
   const PDF_GAP_DATA_NOME = 42
 
   type PdfLine = { text: string; size: number; bold?: boolean; center?: boolean; justify?: boolean }

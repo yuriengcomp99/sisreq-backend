@@ -12,10 +12,8 @@ COPY prisma ./prisma
 COPY prisma.config.ts tsconfig.json ./
 COPY src ./src
 
-# prisma.config.ts exige DATABASE_URL ao carregar; `generate` não conecta ao DB.
 RUN DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build?schema=public" npx prisma generate
 
 EXPOSE 8080 8081
 
-# Comando padrão: API + WS no mesmo processo. Em docker-compose, `api` e `ws` sobrescrevem o comando.
 CMD ["npm", "run", "start"]

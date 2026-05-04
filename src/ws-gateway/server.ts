@@ -11,21 +11,6 @@ import { trackUserSocket } from "./user-sockets.js"
 
 const LOG = "[ws-gateway]"
 
-/**
- * Autenticação WebSocket (passo a passo):
- *
- * 1. O cliente abre a conexão para o mesmo host/porta do gateway (ex.: `ws://localhost:8081`).
- * 2. No handshake HTTP → WebSocket, o navegador não envia `Authorization` por padrão; por isso
- *    aceitamos o access JWT na query string: `ws://localhost:8081/?token=<accessJwt>`.
- *    Clientes não-browser (Node, testes) podem usar `Authorization: Bearer <accessJwt>` no upgrade.
- * 3. Aqui lemos `req` do upgrade (`readAccessTokenFromUpgradeRequest`), extraímos o token e
- *    chamamos `verifyAccessToken` (mesmo segredo e regras do REST).
- * 4. Se não houver token ou for inválido/expirado, fechamos o socket com código 1008 (violação
- *    de política) antes de tratar mensagens — ninguém entra “anônimo”.
- * 5. Se válido, `sub` do JWT é o `userId`; registramos o socket em memória (`trackUserSocket`)
- *    para futuras notificações push por usuário.
- * 6. Só então enviamos `{ type: "connected", userId }` e passamos a aceitar `ping`/echo.
- */
 export type WebSocketGatewayOptions = {
   port?: number
 }

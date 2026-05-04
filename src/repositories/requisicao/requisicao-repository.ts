@@ -14,10 +14,6 @@ export class RequisicaoRepository {
       }
     })
   }
-  /**
-   * Lista requisições sem carregar itens (`detalhes`); inclui `valorTotal`
-   * (soma de `valor_total` dos detalhes). GET por id continua com `detalhes` completos.
-   */
   async findAll() {
     const rows = await prisma.requisicao.findMany({
       orderBy: {
@@ -98,7 +94,6 @@ export class RequisicaoRepository {
     }
   }
 
-  /** Requisição com usuário e nota para emissão de PDF/Word (sem persistir arquivo). */
   async findByIdForDocument(id: string) {
     const requisicao = await prisma.requisicao.findUnique({
       where: { id },
@@ -150,7 +145,6 @@ export class RequisicaoRepository {
     }
   }
 
-  /** Requisições vinculadas à nota, sem carregar itens (detalhes). */
   async findByNotaCreditoIdSemDetalhes(notaCreditoId: string) {
     return prisma.requisicao.findMany({
       where: { notaCreditoId },

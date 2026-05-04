@@ -1,9 +1,3 @@
-/**
- * Teste manual da fila `import.finished` (sem passar pelo import de ATA).
- *
- * Uso (na raiz do projeto, com .env e RabbitMQ acessível):
- *   npx tsx src/scripts/publish-import-queue-test.ts
- */
 import "dotenv/config"
 import { publishImportFinished } from "../infra/queue/rabbitmq/import-finished-publisher.js"
 

@@ -2,7 +2,6 @@ import type { Channel } from "amqplib"
 
 export const QUEUES = {
   IMPORT_FINISHED: "import.finished",
-  /** Consumed alongside the WebSocket process. */
   NOTIFICATION_UNREAD: "notifications.unread",
 } as const
 

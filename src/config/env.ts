@@ -25,11 +25,6 @@ const frontendOrigins = (() => {
   return ["http://localhost:3000", "http://127.0.0.1:3000"]
 })()
 
-/**
- * Re-lê o arquivo `.env` e devolve a URL do RabbitMQ.
- * Use isto antes de conectar/publicar — `env.rabbitMqUrl` fica fixo na primeira carga do módulo
- * (alterar só o `.env` com `tsx watch` não reinicia o processo).
- */
 export function getRabbitMqUrlLive(): string {
   dotenv.config()
   return (process.env.RABBITMQ_URL ?? process.env.AMQP_URL ?? "").trim()
@@ -39,11 +34,6 @@ export const env = {
   nodeEnv: process.env.NODE_ENV ?? "development",
   isProd: process.env.NODE_ENV === "production",
   databaseUrl: process.env.DATABASE_URL ?? "",
-  /**
-   * AMQP connection string, e.g. amqp://user:pass@localhost:5672
-   * `AMQP_URL` is accepted as an alias (common in hosted brokers).
-   */
-  /** Instantâneo na primeira carga; preferir `getRabbitMqUrlLive()` para Rabbit. */
   rabbitMqUrl: (
     process.env.RABBITMQ_URL ??
     process.env.AMQP_URL ??

@@ -37,7 +37,6 @@ function parsePayload(buf: Buffer): NotificationUnreadRabbitPayload | null {
   }
 }
 
-/** Run in the same process as the WebSocket server (ws-service or monolithic API). */
 export async function startNotificationUnreadRabbitConsumer(options?: {
   disconnectPrismaOnClose?: boolean
 }): Promise<{ close: () => Promise<void> }> {

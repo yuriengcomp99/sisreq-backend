@@ -50,9 +50,6 @@ export class NotaCreditoRepository {
     })
   }
 
-  /**
-   * Por nota: quantidade de requisições vinculadas e soma dos valor_total dos itens (RequisicaoDetalhe).
-   */
   async getRequisicaoUsageByNotaCreditoIds(notaIds: string[]) {
     if (notaIds.length === 0) {
       return [] as Array<{

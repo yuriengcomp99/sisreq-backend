@@ -1,10 +1,5 @@
 import type { IncomingMessage } from "node:http"
 
-/**
- * Obtém o access JWT enviado na conexão WebSocket.
- *
- * Ordem: cabeçalho `Authorization: Bearer <token>`, depois query `?token=` ou `?access_token=`.
- */
 export function readAccessTokenFromUpgradeRequest(
   req: IncomingMessage
 ): string | null {

@@ -26,29 +26,24 @@ export type RequisicaoDocumentRow = Requisicao & {
   }
 }
 
-/** Primeiro nome (documentos / assinatura requisitante). */
 export function requisitanteNomeCompleto(user: RequisicaoDocumentRow["user"]): string {
   return user.first_name?.trim() || "—"
 }
 
-/** Linha: `first_name – posto/graduação`. */
 export function requisitanteLinhaNomePosto(user: RequisicaoDocumentRow["user"]): string {
   const fn = user.first_name?.trim() || "—"
   const pg = user.graduation?.trim() || "—"
   return `${fn} – ${pg}`
 }
 
-/** Posto / graduação (só o texto da graduação). */
 export function requisitantePostoGraduacao(user: RequisicaoDocumentRow["user"]): string {
   return user.graduation?.trim() || "—"
 }
 
-/** Cargo (designation.position). */
 export function requisitanteCargo(user: RequisicaoDocumentRow["user"]): string {
   return user.designation?.position?.trim() || "—"
 }
 
-/** Assinaturas do bloco de despacho (via env — dados sensíveis). */
 export function getDespachoAssinaturasFromEnv(): {
   fiscalNome: string
   fiscalCargo: string
@@ -106,7 +101,6 @@ export function contratoLabel(c: SimNao): string {
   return c === "SIM" ? "Sim" : "Não"
 }
 
-/** Linha “Fonte de recurso” — prioriza observação livre da NC; senão monta um resumo. */
 export function fonteRecursoTexto(nota: NotaCredito | null): string {
   if (!nota) return "—"
   const obs = nota.observacao?.trim()
@@ -152,7 +146,6 @@ export function nomeAssinante(user: RequisicaoDocumentRow["user"]): string {
   return n !== "—" ? n : user.graduation?.trim() || "—"
 }
 
-/** Data local (linhas de despacho) — preenchimento manual. */
 export const DESPACHO_DATA_LOCAL_LINHA =
   "Rio de Janeiro-RJ _____/_____/_____"
 
