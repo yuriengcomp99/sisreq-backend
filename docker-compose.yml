@@ -1,36 +1,34 @@
-# Stack local: PostgreSQL + RabbitMQ + API (HTTP) + serviço WebSocket dedicado.
-# Um comando sobe tudo: docker compose up --build
-#
-# URLs internas (entre containers): host `postgres`, `rabbitmq`.
-# Do host: API http://localhost:8080, WS ws://localhost:8081
-
 services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: sisreq
-      POSTGRES_PASSWORD: sisreq
-      POSTGRES_DB: sisreq
+      POSTGRES_USER: ${POSTGRES_USER:-sisreq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sisreq}
+      POSTGRES_DB: ${POSTGRES_DB:-sisreq}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PUBLISH_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sisreq -d sisreq"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "${RABBITMQ_PUBLISH_PORT_AMQP:-5672}:5672"
+      - "${RABBITMQ_PUBLISH_PORT_MGMT:-15672}:15672"
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 6
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 5s
+      timeout: 20s
+      retries: 15
+      start_period: 30s
 
   api:
     build: .
@@ -39,29 +37,28 @@ services:
     command: >
       sh -c "npx prisma migrate deploy && npm run start"
     ports:
-      - "8080:8080"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:8080/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 15
-      start_period: 60s
+      - "${API_PUBLISH_PORT:-8080}:${API_PORT:-8080}"
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://sisreq:sisreq@postgres:5432/sisreq?schema=public
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      API_PORT: ${API_PORT:-8080}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sisreq}:${POSTGRES_PASSWORD:-sisreq}@postgres:5432/${POSTGRES_DB:-sisreq}?schema=public
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
       SEPARATE_WS_SERVICE: "true"
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "const p=process.env.API_PORT||''8080'';fetch(''http://127.0.0.1:''+p+''/'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
 
   ws:
     build: .
@@ -69,12 +66,12 @@ services:
       - .env
     command: ["npm", "run", "start:ws-service"]
     ports:
-      - "8081:8081"
+      - "${WS_PUBLISH_PORT:-8081}:${WS_PORT:-8081}"
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://sisreq:sisreq@postgres:5432/sisreq?schema=public
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
-      WS_PORT: "8081"
+      WS_PORT: ${WS_PORT:-8081}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sisreq}:${POSTGRES_PASSWORD:-sisreq}@postgres:5432/${POSTGRES_DB:-sisreq}?schema=public
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
     depends_on:
       postgres:
         condition: service_healthy

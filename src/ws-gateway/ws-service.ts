@@ -3,23 +3,17 @@ import { getRabbitMqUrlLive } from "../config/env.js"
 import { startNotificationUnreadRabbitConsumer } from "./notification-unread-rabbit-consumer.js"
 import { startWebSocketGateway } from "./server.js"
 
-/**
- * Processo dedicado ao gateway WebSocket + consumidor `notifications.unread`.
- * Use com `SEPARATE_WS_SERVICE` na API para que pushes Rabbit cheguem aos sockets.
- */
 try {
   startWebSocketGateway()
 } catch (err: unknown) {
-  console.error("[ws-service] falha ao iniciar gateway:", err)
+  console.error("[ws-service] gateway failed:", err)
   process.exit(1)
 }
 
 if (getRabbitMqUrlLive()) {
   startNotificationUnreadRabbitConsumer({ disconnectPrismaOnClose: false }).catch((err: unknown) => {
-    console.error("[ws-service] falha ao iniciar consumidor notifications.unread:", err)
+    console.error("[ws-service] notifications.unread consumer failed:", err)
   })
 } else {
-  console.log(
-    "[ws-service] RABBITMQ_URL/AMQP_URL ausente — unread só funciona via push local no mesmo processo que a API."
-  )
+  console.warn("[ws-service] RABBITMQ_URL unset; unread pushes only work in-process")
 }

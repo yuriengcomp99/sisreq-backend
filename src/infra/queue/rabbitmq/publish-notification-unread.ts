@@ -1,4 +1,3 @@
-import type { Connection } from "amqplib"
 import { createRabbitConnection } from "./connection.js"
 import { assertQueue, QUEUES } from "./queue.js"
 import { publishJson } from "./publisher.js"
@@ -13,9 +12,7 @@ export async function publishNotificationUnreadPushes(
   payload: NotificationUnreadRabbitPayload
 ): Promise<boolean> {
   const queueName = QUEUES.NOTIFICATION_UNREAD
-  console.log(LOG, "publish →", queueName, "pushes:", payload.pushes.length)
-
-  let connection: Connection | undefined
+  let connection: Awaited<ReturnType<typeof createRabbitConnection>> | undefined
 
   try {
     connection = await createRabbitConnection()
@@ -24,9 +21,7 @@ export async function publishNotificationUnreadPushes(
     try {
       await assertQueue(channel, queueName)
       const sent = publishJson(channel, queueName, payload)
-      if (!sent) {
-        console.warn(LOG, "sendToQueue returned false", queueName)
-      }
+      if (!sent) console.warn(LOG, "sendToQueue returned false", queueName)
       return sent
     } finally {
       await channel.close().catch(() => undefined)

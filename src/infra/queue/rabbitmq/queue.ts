@@ -2,7 +2,7 @@ import type { Channel } from "amqplib"
 
 export const QUEUES = {
   IMPORT_FINISHED: "import.finished",
-  /** API consome e chama `pushUnreadCountToUser` (processo que tem os sockets WS). */
+  /** Consumed alongside the WebSocket process. */
   NOTIFICATION_UNREAD: "notifications.unread",
 } as const
 

@@ -1,6 +1,6 @@
 import type { ConsumeMessage } from "amqplib"
 import { prisma } from "../database/prisma.js"
-import { createRabbitConnection } from "../infra/queue/rabbitmq/connection.js"
+import { createRabbitConnectionWithRetry } from "../infra/queue/rabbitmq/connection.js"
 import type { NotificationUnreadRabbitPayload } from "../infra/queue/rabbitmq/publish-notification-unread.js"
 import { assertQueue, QUEUES } from "../infra/queue/rabbitmq/queue.js"
 import { pushUnreadCountToUser } from "./push-unread-count.js"
@@ -37,20 +37,19 @@ function parsePayload(buf: Buffer): NotificationUnreadRabbitPayload | null {
   }
 }
 
-/**
- * Só o processo da API (onde roda o WebSocket) deve consumir esta fila.
- * O worker publica após gravar notificações; assim o `unread_count` chega no Postman/cliente em tempo real.
- */
+/** Run in the same process as the WebSocket server (ws-service or monolithic API). */
 export async function startNotificationUnreadRabbitConsumer(options?: {
   disconnectPrismaOnClose?: boolean
 }): Promise<{ close: () => Promise<void> }> {
   const disconnectPrismaOnClose = options?.disconnectPrismaOnClose ?? false
 
-  const connection = await createRabbitConnection()
+  const connection = await createRabbitConnectionWithRetry({
+    label: "notifications.unread consumer",
+  })
   const channel = await connection.createChannel()
 
-  channel.on("error", (err: unknown) => console.error(LOG, "canal:", err))
-  channel.on("close", () => console.warn(LOG, "canal fechado"))
+  channel.on("error", (err: unknown) => console.error(LOG, "channel error:", err))
+  channel.on("close", () => console.warn(LOG, "channel closed"))
 
   await assertQueue(channel, QUEUES.NOTIFICATION_UNREAD)
   await channel.prefetch(1)
@@ -58,7 +57,7 @@ export async function startNotificationUnreadRabbitConsumer(options?: {
   const onMessage = async (msg: ConsumeMessage) => {
     const payload = parsePayload(msg.content)
     if (!payload) {
-      console.error(LOG, "JSON inválido:", msg.content.toString("utf8").slice(0, 300))
+      console.error(LOG, "invalid JSON:", msg.content.toString("utf8").slice(0, 300))
       channel.ack(msg)
       return
     }
@@ -82,7 +81,7 @@ export async function startNotificationUnreadRabbitConsumer(options?: {
     { noAck: false }
   )
 
-  console.log(LOG, "consumidor ativo na fila", QUEUES.NOTIFICATION_UNREAD)
+  console.log(LOG, "consumer ready:", QUEUES.NOTIFICATION_UNREAD)
 
   let closed = false
   return {

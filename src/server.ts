@@ -61,43 +61,31 @@ app.get("/", (req, res) => {
   return res.json({ message: "API running" })
 })
 
-app.listen(8080, () => {
-  console.log("Server running on http://localhost:8080")
+const apiPort = Number(process.env.API_PORT ?? process.env.PORT ?? 8080)
+
+app.listen(apiPort, () => {
+  console.log(`Listening on port ${apiPort}`)
 
   if (!separateWsService) {
     try {
       startWebSocketGateway()
     } catch (err: unknown) {
-      console.error("[ws-gateway] falha ao iniciar:", err)
+      console.error("[ws-gateway] failed to start:", err)
     }
   } else {
-    console.log(
-      "[ws-gateway] SEPARATE_WS_SERVICE ativo — gateway WS e consumidor notifications.unread rodam em outro processo."
-    )
+    console.log("[api] SEPARATE_WS_SERVICE: use npm run dev:ws-service or the ws Docker service")
   }
 
   if (getRabbitMqUrlLive()) {
-    startImportFinishedNotificationConsumer({ disconnectPrismaOnClose: false }).catch(
-      (err: unknown) => {
-        console.error(
-          "[Worker:Notificacoes] falha ao iniciar consumidor no servidor:",
-          err
-        )
-      }
-    )
+    startImportFinishedNotificationConsumer({ disconnectPrismaOnClose: false }).catch((err: unknown) => {
+      console.error("[import.finished consumer] failed to start:", err)
+    })
     if (!separateWsService) {
-      startNotificationUnreadRabbitConsumer({ disconnectPrismaOnClose: false }).catch(
-        (err: unknown) => {
-          console.error(
-            "[notifications.unread] falha ao iniciar consumidor no servidor:",
-            err
-          )
-        }
-      )
+      startNotificationUnreadRabbitConsumer({ disconnectPrismaOnClose: false }).catch((err: unknown) => {
+        console.error("[notifications.unread consumer] failed to start:", err)
+      })
     }
   } else {
-    console.log(
-      "[Worker:Notificacoes] RABBITMQ_URL/AMQP_URL ausente — import.finished e notifications.unread não serão consumidos aqui; unread no WS só via push local no mesmo processo."
-    )
+    console.warn("[api] RABBITMQ_URL unset; import.finished consumer not started")
   }
 })
