@@ -1,4 +1,4 @@
-import "./config/env.js"
+import "../config/env.js"
 import swaggerJsdoc from "swagger-jsdoc"
 
 const swaggerServerUrl = (
