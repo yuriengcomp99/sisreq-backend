@@ -129,6 +129,9 @@ jobs:
             EC2_PROJECT_DIR="$(sanitize "$EC2_PROJECT_DIR")"
             cd "$EC2_PROJECT_DIR"
             aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+            # Disco pequeno na EC2: pull extrai camadas novas antes de soltar as antigas — libera imagens sem uso
+            docker image prune -af || true
+            docker builder prune -af 2>/dev/null || true
             docker compose pull api ws
             docker compose up -d --force-recreate api ws
             docker compose ps
