@@ -1,5 +1,10 @@
 import swaggerJsdoc from "swagger-jsdoc"
 
+const swaggerServerUrl = (
+  process.env.SWAGGER_SERVER_URL ??
+  `http://localhost:${process.env.API_PORT ?? 8080}`
+).trim()
+
 export const swaggerSpec = swaggerJsdoc({
   definition: {
     openapi: "3.0.0",
@@ -10,7 +15,7 @@ export const swaggerSpec = swaggerJsdoc({
     },
     servers: [
       {
-        url: "http://localhost:8080",
+        url: swaggerServerUrl,
       },
     ],
     tags: [
