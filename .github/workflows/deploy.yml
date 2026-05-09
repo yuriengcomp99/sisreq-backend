@@ -49,10 +49,10 @@ jobs:
         shell: bash
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Credenciais AWS
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -67,11 +67,18 @@ jobs:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
         run: |
           set -eux
-          docker build -t "$REGISTRY/${ECR_REPOSITORY}:${IMAGE_TAG_API}" .
-          docker tag "$REGISTRY/${ECR_REPOSITORY}:${IMAGE_TAG_API}" \
-            "$REGISTRY/${ECR_REPOSITORY}:${IMAGE_TAG_WS}"
-          docker push "$REGISTRY/${ECR_REPOSITORY}:${IMAGE_TAG_API}"
-          docker push "$REGISTRY/${ECR_REPOSITORY}:${IMAGE_TAG_WS}"
+          # GitHub Variables coladas no Windows podem trazer \r / \n no meio ou no fim
+          sanitize() { printf '%s' "$1" | sed -e 's/\r//g' -e 's/\n//g' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
+          REGISTRY="$(sanitize "$REGISTRY")"
+          ECR_REPOSITORY="$(sanitize "$ECR_REPOSITORY")"
+          IMAGE_TAG_API="$(sanitize "$IMAGE_TAG_API")"
+          IMAGE_TAG_WS="$(sanitize "$IMAGE_TAG_WS")"
+          export REGISTRY ECR_REPOSITORY IMAGE_TAG_API IMAGE_TAG_WS
+          docker build -t "${REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG_API}" .
+          # Uma linha só: evita problema se o YAML do workflow estiver em CRLF (\ no fim da linha)
+          docker tag "${REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG_API}" "${REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG_WS}"
+          docker push "${REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG_API}"
+          docker push "${REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG_WS}"
 
   deploy:
     name: Deploy na EC2
@@ -116,6 +123,10 @@ jobs:
           script_stop: true
           script: |
             set -eux
+            sanitize() { printf '%s' "$1" | sed -e 's/\r//g' -e 's/\n//g' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
+            AWS_REGION="$(sanitize "$AWS_REGION")"
+            ECR_REGISTRY="$(sanitize "$ECR_REGISTRY")"
+            EC2_PROJECT_DIR="$(sanitize "$EC2_PROJECT_DIR")"
             cd "$EC2_PROJECT_DIR"
             aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
             docker compose pull api ws
