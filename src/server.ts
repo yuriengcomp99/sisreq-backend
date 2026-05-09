@@ -54,6 +54,14 @@ app.use("/notifications", notificationsRouter)
 
 app.use("/dashboard", dashboardRouter)
 
+// Swagger UI usa `servers[0].url` nas requisições "Try it out". Forçar aqui evita
+// localhost quando a imagem antiga ignorava env ou o merge do swagger-jsdoc alterava servers.
+const swaggerServerUrl = (
+  process.env.SWAGGER_SERVER_URL ??
+  `http://localhost:${process.env.API_PORT ?? 8080}`
+).trim()
+;(swaggerSpec as { servers: { url: string }[] }).servers = [{ url: swaggerServerUrl }]
+
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
 
