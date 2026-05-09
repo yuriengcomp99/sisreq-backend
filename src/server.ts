@@ -88,7 +88,7 @@ app.use(
 
 
 app.get("/", (req, res) => {
-  return res.json({ message: "API running" })
+  return res.json({ message: "API running CI/CD feito com sucesso!" })
 })
 
 const apiPort = Number(process.env.API_PORT ?? process.env.PORT ?? 8080)

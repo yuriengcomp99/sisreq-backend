@@ -1,0 +1,2 @@
+# Workflows: sempre LF (evita que \ no fim da linha quebre no bash do runner)
+.github/workflows/* text eol=lf
