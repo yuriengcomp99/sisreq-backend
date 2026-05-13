@@ -20,10 +20,36 @@ const jwtRefreshSecret = requireSecret("JWT_REFRESH_SECRET", legacyJwtSecret)
 const frontendOrigins = (() => {
   const raw = process.env.FRONTEND_ORIGIN?.trim()
   if (raw) {
-    return raw.split(",").map((s) => s.trim()).filter(Boolean)
+    return raw
+      .split(/[\s,]+/)
+      .map((s) => s.replace(/\r$/, "").trim())
+      .filter(Boolean)
   }
   return ["http://localhost:3000", "http://127.0.0.1:3000"]
 })()
+
+function originPatternToRegex(pattern: string): RegExp {
+  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")
+  return new RegExp(`^${escaped}$`, "i")
+}
+
+const frontendOriginMatchers: Array<(origin: string) => boolean> = frontendOrigins.map(
+  (entry) => {
+    if (entry === "*") {
+      return () => true
+    }
+    if (entry.includes("*")) {
+      const regex = originPatternToRegex(entry)
+      return (origin: string) => regex.test(origin)
+    }
+    const normalized = entry.toLowerCase()
+    return (origin: string) => origin.toLowerCase() === normalized
+  }
+)
+
+export function isAllowedOrigin(origin: string): boolean {
+  return frontendOriginMatchers.some((match) => match(origin))
+}
 
 export function getRabbitMqUrlLive(): string {
   dotenv.config()

@@ -1,4 +1,4 @@
-import { env, getRabbitMqUrlLive } from "./config/env.js"
+import { env, getRabbitMqUrlLive, isAllowedOrigin } from "./config/env.js"
 
 const separateWsService = (() => {
   const v = (process.env.SEPARATE_WS_SERVICE ?? "").trim().toLowerCase()
@@ -24,6 +24,11 @@ import { startWebSocketGateway } from "./ws-gateway/server.js"
 
 const app = express()
 
+console.info(
+  `[cors] mode=${env.isProd ? "production" : "development"} allowed origins:`,
+  env.frontendOrigins.join(" | ")
+)
+
 app.use(
   cors({
     origin(origin, callback) {
@@ -31,7 +36,17 @@ app.use(
         callback(null, true)
         return
       }
-      callback(null, env.frontendOrigins.includes(origin))
+      if (isAllowedOrigin(origin)) {
+        callback(null, true)
+        return
+      }
+      if (!env.isProd) {
+        console.warn("[cors] reflecting non-listed Origin in development:", origin)
+        callback(null, true)
+        return
+      }
+      console.warn("[cors] blocked Origin:", origin)
+      callback(null, false)
     },
     credentials: true,
   })
