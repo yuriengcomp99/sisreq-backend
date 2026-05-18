@@ -11,7 +11,6 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![AWS](https://img.shields.io/badge/Deploy-ECR%20%2B%20EC2-232F3E?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
 
-**Demo:** [App (frontend)](https://sisreq.vercel.app/login)
 
 <p align="center">
   <a href="https://sisreq.vercel.app/login">
@@ -373,7 +372,6 @@ Entidades principais no Prisma: **User**, **Designation**, **AtaItem**, **Requis
 
 - **Autor:** [Yuri Rodrigues Cavalcanti](https://github.com/yuriengcomp99/)
 - **LinkedIn:** [https://www.linkedin.com/in/yuri-rodrigues-895287307/](https://www.linkedin.com/in/yuri-rodrigues-895287307/)
-- **Frontend:** [Frontend](https://sisreq.vercel.app/login)
 
 ---
 
