@@ -198,7 +198,7 @@ flowchart LR
   TAG_API --> PULL_WRK[service worker<br/>mesma imagem, cmd diferente]
 ```
 
-### Configuração no GitHub (sem segredos no repo)
+### Configuração no GitHub
 
 | Tipo | Exemplos | Uso |
 |------|----------|-----|
@@ -240,7 +240,7 @@ Na EC2, a instância precisa de **IAM** (ou credenciais) com permissão de **pul
 
 ### Documentação da API
 
-Rotas agrupadas por domínio, testáveis no navegador via **OpenAPI 3** (`swagger-jsdoc` + `swagger-ui-express`). Na captura acima: **Auth** (login, refresh com cookie HttpOnly, registro), além de pregões, requisições, notificações e dashboard — endpoint local `http://localhost:8080/docs` ou `/docs` na API em produção.
+Rotas agrupadas por domínio, testáveis no navegador via **OpenAPI 3** (`swagger-jsdoc` + `swagger-ui-express`). Endpoints: `http://localhost:8080/docs` ou `/docs` na API em produção.
 
 ---
 
@@ -248,22 +248,22 @@ Rotas agrupadas por domínio, testáveis no navegador via **OpenAPI 3** (`swagge
 
 ```
 src/
-├── controllers/       # Camada HTTP (request/response)
-├── use-cases/         # Regras de negócio
-├── repositories/      # Acesso a dados (Prisma)
-├── factories/         # Injeção de dependências por rota
-├── modules/           # Módulos transversais (ex.: notificações)
-├── routes/            # Definição de rotas Express
-├── middlewares/       # Auth, validações
-├── infra/queue/       # RabbitMQ (publishers, filas, conexão)
-├── ws-gateway/        # WebSocket + consumers relacionados
-├── worker/            # Processos background (CLI)
-├── services/          # Geração de documentos, helpers
-└── server.ts          # Bootstrap da API HTTP
+├── controllers/
+├── use-cases/
+├── repositories/
+├── factories/
+├── modules/
+├── routes/
+├── middlewares/
+├── infra/queue/
+├── ws-gateway/
+├── worker/
+├── services/
+└── server.ts
 
-prisma/                # Schema e migrations
-.github/workflows/     # CI/CD (build ECR + deploy EC2)
-docker-compose.yml     # Stack local e produção
+prisma/
+.github/workflows/
+docker-compose.yml
 ```
 
 ---
@@ -273,37 +273,24 @@ docker-compose.yml     # Stack local e produção
 ### Pré-requisitos
 
 - [Docker](https://docs.docker.com/get-docker/) e Docker Compose
-- (Opcional) Node.js 20+ para desenvolvimento sem container
+- Node.js 20+ para desenvolvimento sem container
 
 ### 1. Variáveis de ambiente
 
 Crie um arquivo `.env` na raiz (usado pelo `docker-compose` e pelos serviços):
 
 ```env
-# Banco
 POSTGRES_USER=sisreq
 POSTGRES_PASSWORD=sisreq
 POSTGRES_DB=sisreq
-
-# API
 API_PORT=8080
 NODE_ENV=production
-
-# JWT (obrigatório)
 JWT_ACCESS_SECRET=change-me-access
 JWT_REFRESH_SECRET=change-me-refresh
-
-# CORS — origens do frontend (vírgula ou espaço)
 FRONTEND_ORIGIN=http://localhost:3000
-
-#Informações PDF
 REQUISICAO_DOC_FISCAL_NOME=Nome Fiscal Aqui
 REQUISICAO_DOC_OD_NOME=Nome OD aqui
-
-# WebSocket
 WS_PORT=8081
-
-# Opcional
 SWAGGER_SERVER_URL=http://localhost:8080
 ```
 
@@ -329,9 +316,9 @@ Em terminais separados:
 ```bash
 npm install
 npx prisma migrate dev
-npm run dev                  # API :8080
-npm run dev:ws-service       # WebSocket + consumer unread :8081
-npm run worker:notificacoes  # Consumer import.finished
+npm run dev
+npm run dev:ws-service
+npm run worker:notificacoes
 ```
 
 ---
@@ -358,7 +345,7 @@ Workflow completo: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml
 | **build-and-push** | Build Docker → push no ECR com tags `IMAGE_TAG_API` e `IMAGE_TAG_WS` |
 | **deploy** | SSH na EC2 → login ECR → `docker compose pull api ws worker` → `up -d --force-recreate` |
 
-Diagramas e prints do pipeline: [Arquitetura de deploy](#arquitetura-de-deploy) (Mermaid + [lista de runs](docs/images/github-actions.png) + [detalhe do workflow](docs/images/github-actions-details.png)).
+Detalhes: [Arquitetura de deploy](#arquitetura-de-deploy).
 
 ---
 
