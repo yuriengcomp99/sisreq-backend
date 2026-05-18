@@ -153,6 +153,10 @@ JWT_REFRESH_SECRET=change-me-refresh
 # CORS — origens do frontend (vírgula ou espaço)
 FRONTEND_ORIGIN=http://localhost:3000
 
+#Informações PDF
+REQUISICAO_DOC_FISCAL_NOME=Nome Fiscal Aqui
+REQUISICAO_DOC_OD_NOME=Nome OD aqui
+
 # WebSocket
 WS_PORT=8081
 
@@ -220,10 +224,9 @@ Entidades principais no Prisma: **User**, **Designation**, **AtaItem**, **Requis
 
 ## Contato
 
-<!-- Substitua pelos seus links -->
-- **Autor:** [Seu nome](https://github.com/seu-usuario)
-- **LinkedIn:** [seu-perfil](https://linkedin.com/in/seu-perfil)
-- **Frontend:** _adicione o link do repositório do frontend, se público_
+- **Autor:** [Yuri Rodrigues Cavalcanti](https://github.com/yuriengcomp99/)
+- **LinkedIn:** [https://www.linkedin.com/in/yuri-rodrigues-895287307/](https://www.linkedin.com/in/yuri-rodrigues-895287307/)
+- **Frontend:** [Frontend](https://sisreq.vercel.app/login)
 
 ---
 
