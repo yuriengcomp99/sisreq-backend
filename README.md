@@ -11,6 +11,16 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![AWS](https://img.shields.io/badge/Deploy-ECR%20%2B%20EC2-232F3E?logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
 
+**Demo:** [App (frontend)](https://sisreq.vercel.app/login)
+
+<p align="center">
+  <a href="https://sisreq.vercel.app/login">
+    <img src="docs/images/swagger-doc.png" alt="Swagger UI — Sis Req API documentada com OpenAPI 3" width="720" />
+  </a>
+  <br />
+  <sub>API documentada com Swagger (auth, pregões, requisições, notificações, etc.) — <code>/docs</code> em produção</sub>
+</p>
+
 ---
 
 ## O que é
@@ -26,7 +36,7 @@ O **SisReq** é o backend de um sistema voltado ao fluxo de **compras públicas 
 - **Mensageria com RabbitMQ** — Importação de planilhas dispara eventos; workers criam notificações sem bloquear a API.
 - **Tempo real via WebSocket** — Contagem de notificações não lidas enviada ao cliente após eventos na fila.
 - **Autenticação JWT** — Access token (Bearer) + refresh token em **cookie httpOnly**.
-- **Documentação OpenAPI** — Swagger UI em `/docs`.
+- **Documentação OpenAPI** — Swagger UI em `/docs` (rotas agrupadas por domínio, botão Authorize para JWT).
 - **Geração de documentos** — Exportação de requisições em **DOCX** e **PDF** (`docx`, `pdf-lib`).
 - **Importação Excel em lote** — Leitura com `xlsx`, processamento em chunks e publicação na fila.
 - **CI/CD na AWS** — GitHub Actions faz build, push para **ECR** e deploy na **EC2** com `docker compose`.
@@ -165,6 +175,16 @@ sequenceDiagram
   EC2-->>GHA: docker compose ps
 ```
 
+### Pipeline em produção (GitHub Actions)
+
+Histórico de execuções do workflow **Deploy backend** na branch `main` (build + deploy com sucesso):
+
+![Lista de workflows — execuções bem-sucedidas](docs/images/github-actions.png)
+
+Detalhe de uma execução: job **Build e push ECR** (~58s) → **Deploy na EC2** (~1min), conforme `deploy.yml`:
+
+![Fluxo do deploy.yml — build ECR e deploy EC2](docs/images/github-actions-details.png)
+
 ### Imagens no ECR
 
 Uma única build gera a imagem; duas tags apontam para o mesmo artefato (API e WS usam o mesmo `Dockerfile`; o **worker** reutiliza a imagem com outro `command` no Compose da EC2).
@@ -218,6 +238,10 @@ Na EC2, a instância precisa de **IAM** (ou credenciais) com permissão de **pul
 | Arquivos         | Multer (upload), xlsx, docx, pdf-lib                     |
 | Docs             | swagger-jsdoc, swagger-ui-express                        |
 | Infra            | Docker, Docker Compose, GitHub Actions, AWS ECR/EC2     |
+
+### Documentação da API
+
+Rotas agrupadas por domínio, testáveis no navegador via **OpenAPI 3** (`swagger-jsdoc` + `swagger-ui-express`). Na captura acima: **Auth** (login, refresh com cookie HttpOnly, registro), além de pregões, requisições, notificações e dashboard — endpoint local `http://localhost:8080/docs` ou `/docs` na API em produção.
 
 ---
 
@@ -335,7 +359,7 @@ Workflow completo: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml
 | **build-and-push** | Build Docker → push no ECR com tags `IMAGE_TAG_API` e `IMAGE_TAG_WS` |
 | **deploy** | SSH na EC2 → login ECR → `docker compose pull api ws worker` → `up -d --force-recreate` |
 
-Detalhes visuais: seção [Arquitetura de deploy](#arquitetura-de-deploy) acima.
+Diagramas e prints do pipeline: [Arquitetura de deploy](#arquitetura-de-deploy) (Mermaid + [lista de runs](docs/images/github-actions.png) + [detalhe do workflow](docs/images/github-actions-details.png)).
 
 ---
 
