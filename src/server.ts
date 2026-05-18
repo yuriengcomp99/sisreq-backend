@@ -1,15 +1,9 @@
-import { env, getRabbitMqUrlLive, isAllowedOrigin } from "./config/env.js"
-
-const separateWsService = (() => {
-  const v = (process.env.SEPARATE_WS_SERVICE ?? "").trim().toLowerCase()
-  return v === "1" || v === "true" || v === "yes"
-})()
-import { startImportFinishedNotificationConsumer } from "./worker/notificacoes/import-finished-notification-worker.js"
+import { env, isAllowedOrigin } from "./config/env.js"
 import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 import authRoutes from "./routes/auth-routes.js"
-import { ataRoutes }  from "./routes/ata-routes.js"
+import { ataRoutes } from "./routes/ata-routes.js"
 import ReqRouter from "./routes/requisicao-routes.js"
 import type { Request } from "express"
 import * as swaggerUi from "swagger-ui-express"
@@ -19,8 +13,6 @@ import { NotaCreditoRouter } from "./routes/nota-credito-routes.js"
 import { DesignationRouter } from "./routes/designation-routes.js"
 import { notificationsRouter } from "./routes/notifications-routes.js"
 import { dashboardRouter } from "./routes/dashboard-routes.js"
-import { startNotificationUnreadRabbitConsumer } from "./ws-gateway/notification-unread-rabbit-consumer.js"
-import { startWebSocketGateway } from "./ws-gateway/server.js"
 
 const app = express()
 
@@ -101,36 +93,12 @@ app.use(
   })
 )
 
-
 app.get("/", (req, res) => {
-  return res.json({ message: "API running CI/CD feito com sucesso!" })
+  return res.json({ message: "API running" })
 })
 
 const apiPort = Number(process.env.API_PORT ?? process.env.PORT ?? 8080)
 
 app.listen(apiPort, () => {
   console.log(`Listening on port ${apiPort}`)
-
-  if (!separateWsService) {
-    try {
-      startWebSocketGateway()
-    } catch (err: unknown) {
-      console.error("[ws-gateway] failed to start:", err)
-    }
-  } else {
-    console.log("[api] SEPARATE_WS_SERVICE: use npm run dev:ws-service or the ws Docker service")
-  }
-
-  if (getRabbitMqUrlLive()) {
-    startImportFinishedNotificationConsumer({ disconnectPrismaOnClose: false }).catch((err: unknown) => {
-      console.error("[import.finished consumer] failed to start:", err)
-    })
-    if (!separateWsService) {
-      startNotificationUnreadRabbitConsumer({ disconnectPrismaOnClose: false }).catch((err: unknown) => {
-        console.error("[notifications.unread consumer] failed to start:", err)
-      })
-    }
-  } else {
-    console.warn("[api] RABBITMQ_URL unset; import.finished consumer not started")
-  }
 })

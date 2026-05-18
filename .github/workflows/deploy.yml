@@ -109,7 +109,7 @@ jobs:
           test -n "${{ secrets.EC2_SSH_KEY }}" || (echo "Secret EC2_SSH_KEY ausente" && exit 1)
         shell: bash
 
-      - name: SSH — pull e recriar api + ws
+      - name: SSH — pull e recriar api + ws + worker
         uses: appleboy/ssh-action@v1.2.0
         env:
           ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
@@ -132,6 +132,6 @@ jobs:
             # Disco pequeno na EC2: pull extrai camadas novas antes de soltar as antigas — libera imagens sem uso
             docker image prune -af || true
             docker builder prune -af 2>/dev/null || true
-            docker compose pull api ws
-            docker compose up -d --force-recreate api ws
+            docker compose pull api ws worker
+            docker compose up -d --force-recreate api ws worker
             docker compose ps
