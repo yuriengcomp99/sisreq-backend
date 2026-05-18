@@ -70,6 +70,126 @@ flowchart LR
 
 ---
 
+## Arquitetura de deploy
+
+Visão de como o código chega à produção: **GitHub Actions** constrói a imagem, publica no **Amazon ECR** e atualiza os containers na **EC2** via SSH + Docker Compose.
+
+### Infraestrutura (produção)
+
+```mermaid
+flowchart TB
+  subgraph users [Usuários]
+    U[Browser]
+  end
+
+  subgraph vercel [Vercel]
+    FE[SisReq Frontend]
+  end
+
+  subgraph github [GitHub]
+    REPO[(sisreq-backend)]
+    GA[GitHub Actions<br/>deploy.yml]
+  end
+
+  subgraph aws [AWS]
+    ECR[(Amazon ECR<br/>imagem Docker)]
+    subgraph ec2 [EC2]
+      DC[Docker Compose]
+      API_C[container api]
+      WS_C[container ws]
+      WRK_C[container worker]
+      PG_C[(PostgreSQL)]
+      RMQ_C[(RabbitMQ)]
+      DC --> API_C
+      DC --> WS_C
+      DC --> WRK_C
+      DC --> PG_C
+      DC --> RMQ_C
+    end
+  end
+
+  U --> FE
+  FE -->|HTTPS REST| API_C
+  FE -->|WSS + JWT| WS_C
+  REPO -->|push main| GA
+  GA -->|docker build + push| ECR
+  GA -->|SSH deploy| ec2
+  ECR -->|docker compose pull| DC
+  API_C --> PG_C
+  WS_C --> PG_C
+  WRK_C --> PG_C
+  API_C --> RMQ_C
+  WS_C --> RMQ_C
+  WRK_C --> RMQ_C
+```
+
+### Pipeline CI/CD
+
+Disparo: **push na branch `main`** ou **workflow_dispatch** (manual).
+
+```mermaid
+flowchart LR
+  A[git push main] --> B[Job: build-and-push]
+  B --> B1[Checkout código]
+  B1 --> B2[Login AWS + ECR]
+  B2 --> B3[docker build]
+  B3 --> B4[Tag IMAGE_TAG_API<br/>e IMAGE_TAG_WS]
+  B4 --> B5[docker push x2]
+  B5 --> C[Job: deploy]
+  C --> C1[SSH na EC2]
+  C1 --> C2[aws ecr login]
+  C2 --> C3[docker image prune]
+  C3 --> C4[compose pull<br/>api ws worker]
+  C4 --> C5[compose up -d<br/>--force-recreate]
+  C5 --> D[Serviços em produção]
+```
+
+```mermaid
+sequenceDiagram
+  participant Dev as Desenvolvedor
+  participant GH as GitHub
+  participant GHA as GitHub Actions
+  participant ECR as Amazon ECR
+  participant EC2 as EC2
+
+  Dev->>GH: push main
+  GH->>GHA: workflow deploy.yml
+  GHA->>GHA: validar secrets/variables
+  GHA->>GHA: docker build (Dockerfile)
+  GHA->>ECR: push sisreq:IMAGE_TAG_API
+  GHA->>ECR: push sisreq:IMAGE_TAG_WS
+  Note over GHA,ECR: Mesma imagem, duas tags
+  GHA->>EC2: SSH (appleboy/ssh-action)
+  EC2->>ECR: docker login + compose pull
+  EC2->>EC2: compose up api ws worker
+  EC2-->>GHA: docker compose ps
+```
+
+### Imagens no ECR
+
+Uma única build gera a imagem; duas tags apontam para o mesmo artefato (API e WS usam o mesmo `Dockerfile`; o **worker** reutiliza a imagem com outro `command` no Compose da EC2).
+
+```mermaid
+flowchart LR
+  BUILD[docker build .] --> IMG[Imagem única]
+  IMG --> TAG_API[:IMAGE_TAG_API]
+  IMG --> TAG_WS[:IMAGE_TAG_WS]
+  TAG_API --> PULL_API[service api]
+  TAG_WS --> PULL_WS[service ws]
+  TAG_API --> PULL_WRK[service worker<br/>mesma imagem, cmd diferente]
+```
+
+### Configuração no GitHub (sem segredos no repo)
+
+| Tipo | Exemplos | Uso |
+|------|----------|-----|
+| **Variables** | `AWS_REGION`, `ECR_REPOSITORY`, `ECR_REGISTRY`, `IMAGE_TAG_API`, `IMAGE_TAG_WS`, `EC2_PROJECT_DIR` | Build, registry e caminho do projeto na EC2 |
+| **Secrets** | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY` | Credenciais AWS e acesso SSH |
+
+Na EC2, a instância precisa de **IAM** (ou credenciais) com permissão de **pull no ECR**. O `docker-compose.yml` e o `.env` de produção ficam no servidor (`EC2_PROJECT_DIR`), fora do versionamento.
+
+---
+
 ## Principais domínios da API
 
 | Módulo            | Prefixo            | Descrição resumida                                      |
@@ -207,12 +327,15 @@ npm run worker:notificacoes  # Consumer import.finished
 
 ## CI/CD
 
-Pipeline em [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
+Workflow completo: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
 
-1. **Build** da imagem Docker e push para **Amazon ECR** (tags `api` e `ws`).
-2. **Deploy** via SSH na **EC2**: `docker compose pull` + `up` dos serviços `api`, `ws` e `worker`.
+| Etapa | O que acontece |
+|-------|----------------|
+| **Trigger** | Push em `main` ou execução manual (`workflow_dispatch`) |
+| **build-and-push** | Build Docker → push no ECR com tags `IMAGE_TAG_API` e `IMAGE_TAG_WS` |
+| **deploy** | SSH na EC2 → login ECR → `docker compose pull api ws worker` → `up -d --force-recreate` |
 
-Secrets e variables ficam no GitHub (`AWS_*`, `EC2_*`, `ECR_*`) — nada sensível versionado no repositório.
+Detalhes visuais: seção [Arquitetura de deploy](#arquitetura-de-deploy) acima.
 
 ---
 
