@@ -3,12 +3,9 @@ import { prisma } from "../../database/prisma.js"
 import { createRabbitConnectionWithRetry } from "../../infra/queue/rabbitmq/connection.js"
 import type { ImportFinishedPayload } from "../../infra/queue/rabbitmq/import-finished-publisher.js"
 import { assertQueue, QUEUES } from "../../infra/queue/rabbitmq/queue.js"
-import { NotificationRepository } from "../../modules/notificacoes/repository/notification-repository.js"
-import { CreateNotificationUseCase } from "../../modules/notificacoes/use-case/create-notification-use-case.js"
+import { processImportFinishedNotifications } from "../../modules/notificacoes/process-import-finished-notifications.js"
 
 const LOG = "[Worker:Notificacoes]"
-const MSG =
-  "Os dados de capacidade de compras foram atualizados."
 
 function parsePayload(buf: Buffer): ImportFinishedPayload | null {
   try {
@@ -45,8 +42,6 @@ export async function startImportFinishedNotificationConsumer(options?: {
   await assertQueue(channel, QUEUES.IMPORT_FINISHED)
   await channel.prefetch(1)
 
-  const useCase = new CreateNotificationUseCase(new NotificationRepository())
-
   const onMessage = async (msg: ConsumeMessage) => {
     const payload = parsePayload(msg.content)
     if (!payload) {
@@ -54,7 +49,8 @@ export async function startImportFinishedNotificationConsumer(options?: {
       channel.ack(msg)
       return
     }
-    await useCase.execute({ message: MSG })
+    console.log(LOG, "mensagem recebida:", payload.fileName, "rows=", payload.affectedRows)
+    await processImportFinishedNotifications()
     channel.ack(msg)
   }
 
@@ -63,11 +59,11 @@ export async function startImportFinishedNotificationConsumer(options?: {
     (msg) => {
       if (!msg) return
       void onMessage(msg).catch((err: unknown) => {
-        console.error(LOG, err)
-        channel.nack(msg, false, false)
+        console.error(LOG, "falha ao processar:", err)
+        channel.nack(msg, false, true)
       })
     },
-    { noAck: false }
+    { noAck: false, exclusive: true }
   )
 
   console.log(LOG, "consumer ready:", QUEUES.IMPORT_FINISHED)

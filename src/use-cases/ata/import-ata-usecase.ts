@@ -2,6 +2,7 @@ import path from "node:path"
 import XLSX from "xlsx"
 import { getRabbitMqUrlLive } from "../../config/env.js"
 import { publishImportFinished } from "../../infra/queue/rabbitmq/import-finished-publisher.js"
+import { processImportFinishedNotifications } from "../../modules/notificacoes/process-import-finished-notifications.js"
 import { AtaRepository } from "../../repositories/ata/ata-repository.js"
 
 export class ImportAtaUseCase {
@@ -52,24 +53,31 @@ export class ImportAtaUseCase {
       )
     }
 
+    const fileName = path.basename(filePath)
+    const payload = { fileName, affectedRows: rows.length }
+
     if (!getRabbitMqUrlLive()) {
       console.warn(
-        "[ImportAta] Defina RABBITMQ_URL ou AMQP_URL no .env para publicar em import.finished (importação no banco já foi concluída)."
+        "[ImportAta] RABBITMQ_URL ausente — criando notificações diretamente (sem fila)."
       )
+      await processImportFinishedNotifications()
       return
     }
 
-    const fileName = path.basename(filePath)
     try {
-      await publishImportFinished({
-        fileName,
-        affectedRows: rows.length,
-      })
+      const sent = await publishImportFinished(payload)
+      if (!sent) {
+        console.warn(
+          "[ImportAta] Fila import.finished indisponível — criando notificações diretamente."
+        )
+        await processImportFinishedNotifications()
+      }
     } catch (err) {
       console.error(
-        "[ImportAta] Importação concluída, mas falha ao publicar na fila:",
+        "[ImportAta] Falha ao publicar na fila — criando notificações diretamente:",
         err
       )
+      await processImportFinishedNotifications()
     }
   }
 

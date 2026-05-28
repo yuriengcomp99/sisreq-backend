@@ -63,6 +63,12 @@ export async function startNotificationUnreadRabbitConsumer(options?: {
     for (const { userId, count } of payload.pushes) {
       pushUnreadCountToUser(userId, count)
     }
+    console.log(
+      LOG,
+      "push unread aplicado —",
+      payload.pushes.length,
+      "destinatário(s)"
+    )
     channel.ack(msg)
   }
 
@@ -74,13 +80,13 @@ export async function startNotificationUnreadRabbitConsumer(options?: {
       }
       void onMessage(msg).catch((err: unknown) => {
         console.error(LOG, err)
-        channel.nack(msg, false, false)
+        channel.nack(msg, false, true)
       })
     },
-    { noAck: false }
+    { noAck: false, exclusive: true }
   )
 
-  console.log(LOG, "consumer ready:", QUEUES.NOTIFICATION_UNREAD)
+  console.log(LOG, "consumidor ativo na fila", QUEUES.NOTIFICATION_UNREAD)
 
   let closed = false
   return {
